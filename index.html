@@ -1,0 +1,568 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>iCPSS — CMML Risk Score Calculator</title>
+  <style>
+    /* ── Reset & base ────────────────────────────────────────────────────── */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+                   Helvetica, Arial, sans-serif;
+      font-size: 15px;
+      background: #f4f6f8;
+      color: #1a1a2e;
+      min-height: 100vh;
+    }
+
+    /* ── Header ──────────────────────────────────────────────────────────── */
+    header {
+      background: #1a3a6e;
+      color: #fff;
+      padding: 18px 32px;
+      display: flex;
+      align-items: baseline;
+      gap: 14px;
+    }
+    header h1 { font-size: 1.45rem; font-weight: 700; letter-spacing: 0.02em; }
+    header p  { font-size: 0.88rem; opacity: 0.82; }
+
+    /* ── Main container ──────────────────────────────────────────────────── */
+    main {
+      max-width: 860px;
+      margin: 28px auto;
+      padding: 0 16px 60px;
+    }
+
+    /* ── Tabs ────────────────────────────────────────────────────────────── */
+    .tab-bar {
+      display: flex;
+      gap: 4px;
+      border-bottom: 2px solid #d1d8e0;
+      margin-bottom: 24px;
+    }
+    .tab-btn {
+      padding: 9px 22px;
+      border: none;
+      background: none;
+      font-size: 0.96rem;
+      font-weight: 500;
+      color: #555;
+      cursor: pointer;
+      border-bottom: 3px solid transparent;
+      margin-bottom: -2px;
+      border-radius: 4px 4px 0 0;
+      transition: color 0.15s, border-color 0.15s;
+    }
+    .tab-btn:hover   { color: #1a3a6e; }
+    .tab-btn.active  { color: #1a3a6e; border-bottom-color: #1a3a6e; font-weight: 600; }
+    .tab-panel       { display: none; }
+    .tab-panel.active{ display: block; }
+
+    /* ── Cards ───────────────────────────────────────────────────────────── */
+    .card {
+      background: #fff;
+      border: 1px solid #d8dde6;
+      border-radius: 8px;
+      padding: 22px 24px;
+      margin-bottom: 18px;
+    }
+    .card-title {
+      font-size: 0.82rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.07em;
+      color: #1a3a6e;
+      margin-bottom: 16px;
+      padding-bottom: 8px;
+      border-bottom: 1px solid #e8ecf0;
+    }
+
+    /* ── Toggle (demographics) ───────────────────────────────────────────── */
+    .demo-row {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      background: #eef3fb;
+      border: 1px solid #c5d6f0;
+      border-radius: 6px;
+      padding: 10px 16px;
+      margin-bottom: 20px;
+    }
+    .demo-row label { font-weight: 500; cursor: pointer; }
+    .toggle-switch {
+      position: relative;
+      display: inline-block;
+      width: 40px;
+      height: 22px;
+    }
+    .toggle-switch input { opacity: 0; width: 0; height: 0; }
+    .toggle-slider {
+      position: absolute; cursor: pointer; inset: 0;
+      background: #bbb;
+      border-radius: 22px;
+      transition: background 0.2s;
+    }
+    .toggle-slider::before {
+      content: '';
+      position: absolute;
+      width: 16px; height: 16px;
+      left: 3px; bottom: 3px;
+      background: #fff;
+      border-radius: 50%;
+      transition: transform 0.2s;
+    }
+    .toggle-switch input:checked + .toggle-slider { background: #1a3a6e; }
+    .toggle-switch input:checked + .toggle-slider::before { transform: translateX(18px); }
+
+    /* ── Form fields ─────────────────────────────────────────────────────── */
+    .form-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(190px, 1fr));
+      gap: 14px 18px;
+    }
+    .form-group { display: flex; flex-direction: column; gap: 5px; }
+    .form-group label {
+      font-size: 0.84rem;
+      font-weight: 600;
+      color: #333;
+    }
+    .form-group .unit {
+      font-size: 0.78rem;
+      font-weight: 400;
+      color: #777;
+      margin-left: 4px;
+    }
+    input[type="number"],
+    input[type="text"],
+    select {
+      padding: 7px 10px;
+      border: 1px solid #c8ced6;
+      border-radius: 5px;
+      font-size: 0.93rem;
+      color: #1a1a2e;
+      background: #fff;
+      transition: border-color 0.15s;
+      width: 100%;
+    }
+    input[type="number"]:focus,
+    input[type="text"]:focus,
+    select:focus {
+      outline: none;
+      border-color: #1a3a6e;
+      box-shadow: 0 0 0 2px rgba(26,58,110,0.12);
+    }
+    select { cursor: pointer; }
+
+    /* ── Radio (sex) ─────────────────────────────────────────────────────── */
+    .radio-group { display: flex; gap: 16px; align-items: center; margin-top: 2px; }
+    .radio-group label {
+      display: flex; align-items: center; gap: 5px;
+      font-size: 0.93rem; font-weight: 400; cursor: pointer;
+    }
+    input[type="radio"] { accent-color: #1a3a6e; width: 15px; height: 15px; }
+
+    /* ── Checkboxes (mutations) ──────────────────────────────────────────── */
+    .mutation-grid {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px 18px;
+      margin-top: 2px;
+    }
+    .mutation-grid label {
+      display: flex; align-items: center; gap: 6px;
+      font-size: 0.93rem; cursor: pointer;
+      background: #f4f6f8;
+      border: 1px solid #d1d8e0;
+      border-radius: 5px;
+      padding: 5px 12px;
+      transition: background 0.15s, border-color 0.15s;
+      user-select: none;
+    }
+    .mutation-grid label:hover { background: #eef3fb; border-color: #9ab3d8; }
+    .mutation-grid input[type="checkbox"] { accent-color: #1a3a6e; width: 15px; height: 15px; }
+
+    /* ── Buttons ─────────────────────────────────────────────────────────── */
+    .btn {
+      display: inline-flex; align-items: center; gap: 6px;
+      padding: 9px 20px;
+      border: none; border-radius: 6px;
+      font-size: 0.93rem; font-weight: 600;
+      cursor: pointer;
+      transition: opacity 0.15s, transform 0.1s;
+    }
+    .btn:active  { transform: scale(0.97); }
+    .btn:disabled{ opacity: 0.45; cursor: not-allowed; }
+    .btn-primary { background: #1a3a6e; color: #fff; }
+    .btn-primary:hover:not(:disabled) { background: #14306b; }
+    .btn-outline {
+      background: transparent;
+      color: #1a3a6e;
+      border: 1.5px solid #1a3a6e;
+    }
+    .btn-outline:hover:not(:disabled) { background: #eef3fb; }
+    .btn-row { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 20px; }
+
+    /* ── Errors ──────────────────────────────────────────────────────────── */
+    .error-list {
+      display: none;
+      list-style: none;
+      background: #fef2f2;
+      border: 1px solid #fca5a5;
+      border-radius: 6px;
+      padding: 10px 14px;
+      margin-bottom: 16px;
+      color: #b91c1c;
+      font-size: 0.88rem;
+    }
+    .error-list li + li { margin-top: 4px; }
+
+    /* ── Result (single patient) ─────────────────────────────────────────── */
+    #result-container { margin-top: 22px; }
+    .result-card {
+      display: flex;
+      align-items: center;
+      gap: 20px;
+      background: #f8fafc;
+      border: 1px solid #d1d8e0;
+      border-radius: 8px;
+      padding: 18px 24px;
+    }
+    .result-badge {
+      font-size: 1.7rem;
+      font-weight: 800;
+      padding: 10px 22px;
+      border-radius: 8px;
+      letter-spacing: 0.04em;
+      min-width: 80px;
+      text-align: center;
+    }
+    .result-score {
+      font-size: 1rem;
+      color: #444;
+    }
+    .result-score strong { font-size: 1.2rem; color: #1a1a2e; }
+
+    /* ── Batch section ───────────────────────────────────────────────────── */
+    .batch-upload-area {
+      border: 2px dashed #9ab3d8;
+      border-radius: 8px;
+      padding: 22px;
+      text-align: center;
+      background: #f8fafc;
+      cursor: pointer;
+      transition: background 0.15s, border-color 0.15s;
+    }
+    .batch-upload-area:hover { background: #eef3fb; border-color: #1a3a6e; }
+    .batch-upload-area input { display: none; }
+    .upload-icon { font-size: 2rem; margin-bottom: 6px; }
+    .upload-label {
+      font-size: 0.92rem; color: #555; margin-bottom: 4px;
+    }
+    .upload-label strong { color: #1a3a6e; cursor: pointer; }
+    .upload-hint { font-size: 0.8rem; color: #888; }
+
+    /* ── Results table ───────────────────────────────────────────────────── */
+    .results-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.9rem;
+      margin-top: 4px;
+    }
+    .results-table th {
+      background: #1a3a6e;
+      color: #fff;
+      padding: 9px 14px;
+      text-align: left;
+      font-weight: 600;
+      font-size: 0.83rem;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+    .results-table td {
+      padding: 8px 14px;
+      border-bottom: 1px solid #e8ecf0;
+    }
+    .results-table tr:last-child td { border-bottom: none; }
+    .results-table tr:hover td { background: #f4f8ff; }
+    .badge {
+      display: inline-block;
+      padding: 2px 9px;
+      border-radius: 4px;
+      font-size: 0.83rem;
+      font-weight: 700;
+      letter-spacing: 0.03em;
+    }
+    .empty-msg, .loading-msg {
+      color: #888; font-style: italic; text-align: center;
+      padding: 20px 0;
+    }
+
+    /* ── Info note ───────────────────────────────────────────────────────── */
+    .info-note {
+      font-size: 0.82rem;
+      color: #666;
+      background: #f8f9fa;
+      border-left: 3px solid #9ab3d8;
+      padding: 8px 12px;
+      border-radius: 0 4px 4px 0;
+      margin-top: 12px;
+    }
+
+    /* ── Responsive ──────────────────────────────────────────────────────── */
+    @media (max-width: 600px) {
+      header { padding: 14px 16px; flex-direction: column; gap: 4px; }
+      .form-grid { grid-template-columns: 1fr 1fr; }
+    }
+  </style>
+</head>
+<body>
+
+<header>
+  <h1>iCPSS Risk Score Calculator</h1>
+  <p>Chronic Myelomonocytic Leukemia (CMML)</p>
+</header>
+
+<main>
+  <!-- Tabs -->
+  <div class="tab-bar" role="tablist">
+    <button class="tab-btn active" data-tab="single" role="tab" aria-selected="true">
+      Single Patient
+    </button>
+    <button class="tab-btn" data-tab="batch" role="tab" aria-selected="false">
+      Batch Mode
+    </button>
+  </div>
+
+  <!-- ── Single Patient Panel ─────────────────────────────────────────────── -->
+  <div id="panel-single" class="tab-panel active" role="tabpanel">
+
+    <!-- Demographics toggle -->
+    <div class="demo-row">
+      <label class="toggle-switch">
+        <input type="checkbox" id="demo-toggle" checked>
+        <span class="toggle-slider"></span>
+      </label>
+      <label for="demo-toggle">Include age &amp; sex (demographics)</label>
+    </div>
+
+    <ul class="error-list" id="single-errors"></ul>
+
+    <form id="single-form" novalidate>
+
+      <!-- Patient ID -->
+      <div class="card">
+        <div class="card-title">Patient Information</div>
+        <div class="form-grid">
+          <div class="form-group" style="grid-column: 1 / -1; max-width: 280px;">
+            <label for="patient-id">Patient ID <span class="unit">(optional)</span></label>
+            <input type="text" id="patient-id" placeholder="e.g. PT-001">
+          </div>
+        </div>
+      </div>
+
+      <!-- Demographics (collapsible section) -->
+      <div class="card" id="demo-section">
+        <div class="card-title">Demographics</div>
+        <div class="form-grid">
+          <div class="form-group">
+            <label>Sex</label>
+            <div class="radio-group">
+              <label><input type="radio" name="sex" value="1"> Male</label>
+              <label><input type="radio" name="sex" value="0"> Female</label>
+            </div>
+          </div>
+          <div class="form-group">
+            <label for="age">Age <span class="unit">(years)</span></label>
+            <input type="number" id="age" placeholder="e.g. 68" min="0" max="120" step="1">
+          </div>
+        </div>
+      </div>
+
+      <!-- Clinical parameters -->
+      <div class="card">
+        <div class="card-title">Clinical Parameters</div>
+        <div class="form-grid">
+          <div class="form-group">
+            <label for="wbc">WBC <span class="unit">(×10⁹/L)</span></label>
+            <input type="number" id="wbc" placeholder="e.g. 12.5" min="0" max="500" step="0.1">
+          </div>
+          <div class="form-group">
+            <label for="hb">Hemoglobin <span class="unit">(g/dL)</span></label>
+            <input type="number" id="hb" placeholder="e.g. 10.2" min="0" max="25" step="0.1">
+          </div>
+          <div class="form-group">
+            <label for="plt">Platelets <span class="unit">(×10⁹/L)</span></label>
+            <input type="number" id="plt" placeholder="e.g. 120" min="0" max="3000" step="1">
+          </div>
+          <div class="form-group">
+            <label for="blasts">BM Blasts <span class="unit">(%)</span></label>
+            <input type="number" id="blasts" placeholder="e.g. 5" min="0" max="100" step="0.1">
+          </div>
+          <div class="form-group">
+            <label for="karyo">CPSS Karyotype</label>
+            <select id="karyo">
+              <option value="">— select —</option>
+              <option value="0">0 — Normal / Low risk</option>
+              <option value="1">1 — Intermediate</option>
+              <option value="2">2 — Poor / Complex</option>
+            </select>
+          </div>
+        </div>
+      </div>
+
+      <!-- Mutations -->
+      <div class="card">
+        <div class="card-title">Somatic Mutations</div>
+        <p style="font-size:0.84rem;color:#666;margin-bottom:12px;">
+          Check all mutations present (leave unchecked = wild-type / not detected).
+        </p>
+        <div class="mutation-grid">
+          <label><input type="checkbox" id="ASXL1">  ASXL1</label>
+          <label><input type="checkbox" id="DNMT3A"> DNMT3A</label>
+          <label><input type="checkbox" id="EZH2">   EZH2</label>
+          <label><input type="checkbox" id="RUNX1">  RUNX1</label>
+          <label><input type="checkbox" id="SETBP1"> SETBP1</label>
+          <label><input type="checkbox" id="STAG2">  STAG2</label>
+          <label><input type="checkbox" id="TET2">   TET2</label>
+          <label><input type="checkbox" id="TP53">   TP53</label>
+          <label><input type="checkbox" id="U2AF1">  U2AF1</label>
+        </div>
+      </div>
+
+      <div class="btn-row">
+        <button type="button" id="btn-compute" class="btn btn-primary">Compute Score</button>
+        <button type="button" id="btn-clear"   class="btn btn-outline">Clear</button>
+      </div>
+    </form>
+
+    <!-- Result -->
+    <div id="result-container"></div>
+
+    <div class="info-note">
+      Missing numerical values are imputed with their training-set mean (i.e. standardized to 0).
+      Karyotype and demographics (when enabled) are required.
+    </div>
+  </div><!-- /panel-single -->
+
+  <!-- ── Batch Panel ───────────────────────────────────────────────────────── -->
+  <div id="panel-batch" class="tab-panel" role="tabpanel">
+
+    <!-- Demographics toggle -->
+    <div class="demo-row">
+      <label class="toggle-switch">
+        <input type="checkbox" id="batch-demo-toggle" checked>
+        <span class="toggle-slider"></span>
+      </label>
+      <label for="batch-demo-toggle">Include age &amp; sex (demographics)</label>
+    </div>
+
+    <!-- Step 1: template -->
+    <div class="card">
+      <div class="card-title">Step 1 — Download Template</div>
+      <p style="font-size:0.88rem;color:#555;margin-bottom:14px;">
+        Download the Excel template, fill in your patient data, then upload below.
+      </p>
+      <button type="button" id="btn-template" class="btn btn-outline">
+        &#8659; Download Template (.xlsx)
+      </button>
+      <div class="info-note" style="margin-top:14px;">
+        <strong>Required columns:</strong>
+        <code>sex</code> (1=Male, 0=Female),
+        <code>age</code>, <code>wbc_cont</code>, <code>hb_cont</code>,
+        <code>plt_cont</code>, <code>blast_cont</code>,
+        <code>cpss_karyo</code> (0/1/2),
+        mutation columns (0/1): <code>ASXL1, DNMT3A, EZH2, RUNX1, SETBP1, STAG2, TET2, TP53, U2AF1</code>.
+        An optional <code>id</code> column can be used to label patients.
+        Missing numerical values are imputed with their mean.
+      </div>
+    </div>
+
+    <!-- Step 2: upload -->
+    <div class="card">
+      <div class="card-title">Step 2 — Upload &amp; Compute</div>
+      <ul class="error-list" id="batch-errors"></ul>
+
+      <label class="batch-upload-area" for="batch-file">
+        <div class="upload-icon">&#128190;</div>
+        <div class="upload-label">
+          <strong>Click to choose file</strong> or drag and drop
+        </div>
+        <div class="upload-hint">.xlsx files only</div>
+        <input type="file" id="batch-file" accept=".xlsx">
+      </label>
+
+      <p id="batch-filename" style="font-size:0.84rem;color:#555;margin-top:8px;"></p>
+    </div>
+
+    <!-- Results -->
+    <div class="card">
+      <div class="card-title">Results</div>
+      <div id="batch-results"><p class="empty-msg">Upload a file to see results.</p></div>
+      <div class="btn-row">
+        <button type="button" id="btn-download-results" class="btn btn-primary" disabled>
+          &#8659; Download Results (.xlsx)
+        </button>
+      </div>
+    </div>
+
+  </div><!-- /panel-batch -->
+</main>
+
+<script src="js/xlsx.full.min.js"></script>
+<script src="js/icpss.js"></script>
+<script>
+  // ── Extra UI wiring not in icpss.js ────────────────────────────────────────
+
+  // Show/hide demo section based on toggle
+  const demoToggle  = document.getElementById('demo-toggle');
+  const demoSection = document.getElementById('demo-section');
+
+  function updateDemoSection() {
+    demoSection.style.display = demoToggle.checked ? 'block' : 'none';
+    // Clear sex/age if hidden
+    if (!demoToggle.checked) {
+      document.querySelectorAll('input[name="sex"]').forEach(r => r.checked = false);
+      document.getElementById('age').value = '';
+    }
+  }
+  demoToggle.addEventListener('change', updateDemoSection);
+  updateDemoSection();
+
+  // Show file name after selection
+  const batchFile     = document.getElementById('batch-file');
+  const batchFilename = document.getElementById('batch-filename');
+  batchFile.addEventListener('change', () => {
+    batchFilename.textContent = batchFile.files.length > 0
+      ? 'Selected: ' + batchFile.files[0].name
+      : '';
+  });
+
+  // Drag-and-drop support for the upload area
+  const uploadArea = document.querySelector('.batch-upload-area');
+  uploadArea.addEventListener('dragover', e => {
+    e.preventDefault();
+    uploadArea.style.background = '#dceeff';
+  });
+  uploadArea.addEventListener('dragleave', () => {
+    uploadArea.style.background = '';
+  });
+  uploadArea.addEventListener('drop', e => {
+    e.preventDefault();
+    uploadArea.style.background = '';
+    const files = e.dataTransfer.files;
+    if (files.length > 0 && files[0].name.endsWith('.xlsx')) {
+      // Programmatically set files on the input and trigger change
+      const dt = new DataTransfer();
+      dt.items.add(files[0]);
+      batchFile.files = dt.files;
+      batchFilename.textContent = 'Selected: ' + files[0].name;
+      batchFile.dispatchEvent(new Event('change'));
+    } else {
+      alert('Please drop a .xlsx file.');
+    }
+  });
+</script>
+</body>
+</html>

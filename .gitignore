@@ -1,0 +1,4 @@
+*.R
+CLAUDE.md
+.DS_Store
+.claude/
