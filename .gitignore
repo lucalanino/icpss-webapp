@@ -1,8 +1,4 @@
 CLAUDE.md
 .DS_Store
 .claude/
-<<<<<<< HEAD
 legacy/
-=======
-legacy/
->>>>>>> ce65998 (Refactor field names, add outcomes data, batch validation, and print support)
