@@ -6,16 +6,16 @@
   <title>iCPSS — CMML Risk Score Calculator</title>
   <style>
     :root {
-      --bg:         #faf7f2;
+      --bg:         #f8f8f7;
       --bg-input:   #ffffff;
-      --accent:     #7c1d2e;
-      --accent-hov: #6a1827;
-      --text:       #2c2017;
-      --text-mid:   #5a4735;
-      --text-mute:  #8c7b6a;
-      --border:     #e0d8ce;
-      --border-in:  #c8bfb4;
-      --focus-ring: rgba(124,29,46,0.15);
+      --accent:     #1a5eb8;
+      --accent-hov: #1550a2;
+      --text:       #1c1e22;
+      --text-mid:   #50545e;
+      --text-mute:  #8e939e;
+      --border:     #e2e3e6;
+      --border-in:  #c4c7ce;
+      --focus-ring: rgba(26,94,184,0.18);
     }
 
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
@@ -333,6 +333,31 @@
     }
     .rail-lbl.active { font-weight: 700; }
 
+    /* ── Outcome stats ───────────────────────────────────────────────────── */
+    .outcome-stats {
+      display: flex; gap: 16px; margin-top: 20px; flex-wrap: wrap;
+    }
+    .outcome-stat {
+      flex: 1; min-width: 140px;
+      background: var(--bg-input);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 14px 18px;
+    }
+    .outcome-value {
+      font-family: Georgia, "Times New Roman", serif;
+      font-size: 1.65rem; font-weight: normal;
+      color: var(--text); line-height: 1; margin-bottom: 3px;
+    }
+    .outcome-ci {
+      font-size: 0.75rem; color: var(--text-mute);
+      font-variant-numeric: tabular-nums; margin-bottom: 6px;
+    }
+    .outcome-label {
+      font-size: 0.73rem; font-weight: 600; text-transform: uppercase;
+      letter-spacing: 0.09em; color: var(--text-mid);
+    }
+
     /* ── Info note ───────────────────────────────────────────────────────── */
     .info-note {
       font-size: 0.79rem; color: var(--text-mute); line-height: 1.65;
@@ -346,9 +371,17 @@
       border-top: 1px solid var(--border); padding-top: 14px; margin-top: 40px;
     }
 
+    /* ── Disclaimer ──────────────────────────────────────────────────────── */
+    .disclaimer-note {
+      font-size: 0.72rem; color: var(--text-mute); line-height: 1.6;
+      border-top: 1px solid var(--border); padding-top: 12px; margin-top: 14px;
+    }
+    .disclaimer-note strong { font-weight: 600; color: var(--text-mute); }
+
     /* ── Batch ───────────────────────────────────────────────────────────── */
     .batch-step { margin-bottom: 28px; }
     .batch-upload-area {
+      display: block;
       border: 1.5px dashed var(--border-in);
       border-radius: 6px; padding: 28px; text-align: center;
       background: var(--bg-input); cursor: pointer; transition: all 0.15s;
@@ -361,6 +394,7 @@
     .upload-hint { font-size: 0.76rem; color: var(--text-mute); }
     .results-table { width: 100%; border-collapse: collapse; font-size: 0.88rem; }
     .results-table th {
+      position: sticky; top: 0; z-index: 1;
       background: var(--text); color: #fff; padding: 8px 14px;
       text-align: left; font-size: 0.74rem;
       text-transform: uppercase; letter-spacing: 0.08em; font-weight: 600;
@@ -383,6 +417,131 @@
       font-family: "SF Mono", Consolas, monospace; font-size: 0.77rem;
       color: var(--text-mid); background: rgba(0,0,0,0.05);
       padding: 1px 4px; border-radius: 3px;
+    }
+
+    /* ── Print button ────────────────────────────────────────────────────── */
+    .btn-print {
+      padding: 7px 16px;
+      border: 1.5px solid var(--border-in);
+      border-radius: 5px;
+      background: transparent;
+      color: var(--text-mute);
+      font-size: 0.80rem; font-weight: 500;
+      cursor: pointer;
+      transition: border-color 0.15s, color 0.15s;
+    }
+    .btn-print:hover { border-color: var(--accent); color: var(--accent); }
+
+    /* ── Print sheet ─────────────────────────────────────────────────────── */
+    #print-sheet { display: none; }
+
+    .ps-watermark {
+      text-align: center; padding: 5px 0; margin-bottom: 22px;
+      background: #fefce8; border-bottom: 1px solid #fde68a;
+      font-size: 0.63rem; font-weight: 700;
+      letter-spacing: 0.15em; text-transform: uppercase; color: #a16207;
+    }
+    .ps-header {
+      display: flex; justify-content: space-between; align-items: flex-start;
+      margin-bottom: 6px;
+    }
+    .ps-title {
+      font-family: Georgia, "Times New Roman", serif;
+      font-size: 1.1rem; font-weight: normal;
+    }
+    .ps-title strong { color: var(--accent); }
+    .ps-subtitle { font-size: 0.78rem; color: var(--text-mute); margin-top: 3px; }
+    .ps-timestamp { font-size: 0.74rem; color: var(--text-mute); padding-top: 2px; }
+    .ps-rule { border: none; border-top: 1px solid var(--border); margin: 16px 0; }
+    .ps-class-name {
+      font-family: Georgia, "Times New Roman", serif;
+      font-size: 1.8rem; font-weight: normal; letter-spacing: -0.02em; line-height: 1;
+    }
+    .ps-score-meta { font-size: 0.83rem; color: var(--text-mute); margin-top: 5px; }
+    .ps-score-meta strong { color: var(--text-mid); }
+    .ps-outcomes { display: flex; gap: 14px; margin-top: 18px; }
+    .ps-stat {
+      flex: 1; border: 1px solid var(--border); border-radius: 5px; padding: 12px 16px;
+    }
+    .ps-stat-val {
+      font-family: Georgia, "Times New Roman", serif;
+      font-size: 1.5rem; color: var(--text); line-height: 1;
+    }
+    .ps-stat-ci { font-size: 0.72rem; color: var(--text-mute); margin: 3px 0 5px; }
+    .ps-stat-lbl {
+      font-size: 0.68rem; font-weight: 700; text-transform: uppercase;
+      letter-spacing: 0.09em; color: var(--text-mid);
+    }
+    .ps-section-label {
+      font-size: 0.68rem; font-weight: 700; text-transform: uppercase;
+      letter-spacing: 0.12em; color: var(--text-mid); margin-bottom: 10px;
+    }
+    .ps-inputs-table { width: 100%; border-collapse: collapse; font-size: 0.82rem; }
+    .ps-inputs-table tr + tr .ps-il,
+    .ps-inputs-table tr + tr .ps-iv { border-top: 1px solid var(--border); padding-top: 7px; }
+    .ps-il { color: var(--text-mute); font-weight: 500; padding: 5px 12px 5px 0; width: 22%; vertical-align: top; }
+    .ps-iv { color: var(--text); padding: 5px 20px 5px 0; width: 28%; vertical-align: top; }
+    .ps-ref {
+      font-size: 0.74rem; color: var(--text-mute); font-style: italic; margin-bottom: 8px;
+    }
+    .ps-disc {
+      font-size: 0.68rem; color: var(--text-mute); line-height: 1.6;
+    }
+    .ps-disc strong { font-weight: 600; }
+
+    /* ── Print media ─────────────────────────────────────────────────────── */
+    @media print {
+      @page { margin: 14mm 12mm; }
+
+      header, .tab-bar, #panel-single, #panel-batch,
+      .reference-note, .disclaimer-note { display: none !important; }
+
+      body { background: white; }
+      main { padding: 0; max-width: 100%; }
+      #print-sheet { display: block !important; }
+
+      /* Force color rendering for elements that need it */
+      .ps-class-name,
+      .rail-stop.active .rail-dot,
+      .rail-lbl.active,
+      .ps-watermark {
+        -webkit-print-color-adjust: exact;
+        print-color-adjust: exact;
+      }
+
+      /* Watermark: use border instead of background so it's always visible */
+      .ps-watermark {
+        background: none !important;
+        border-bottom: 1.5px solid #d97706;
+        color: #b45309 !important;
+        padding-bottom: 7px;
+      }
+
+      /* Darken all muted/light text for white paper */
+      .ps-subtitle, .ps-timestamp          { color: #555 !important; }
+      .ps-score-meta                        { color: #555 !important; }
+      .ps-score-meta strong                 { color: #1c1e22 !important; }
+      .ps-stat-ci                           { color: #555 !important; }
+      .ps-stat-lbl, .ps-section-label       { color: #333 !important; }
+      .ps-il                                { color: #555 !important; }
+      .ps-ref, .ps-disc                     { color: #555 !important; }
+      .rail-lbl                             { color: #555 !important; }
+
+      /* Darken borders so they're visible on white */
+      .ps-rule                              { border-top-color: #bbb !important; }
+      .ps-stat                              { border-color: #bbb !important; }
+      .ps-inputs-table tr + tr .ps-il,
+      .ps-inputs-table tr + tr .ps-iv       { border-top-color: #ddd !important; }
+
+      /* Rail track and inactive dots only */
+      .risk-rail-track                      { background: #aaa !important;
+                                              -webkit-print-color-adjust: exact;
+                                              print-color-adjust: exact; }
+      .rail-stop:not(.active) .rail-dot     { background: white !important;
+                                              border-color: #aaa !important; }
+      /* Active dot: force its inline class color to render */
+      .rail-stop.active .rail-dot           { -webkit-print-color-adjust: exact;
+                                              print-color-adjust: exact; }
     }
 
     /* ── Responsive ──────────────────────────────────────────────────────── */
@@ -427,7 +586,7 @@
           </div>
           <div class="form-group">
             <label for="hb">Hemoglobin <span class="unit">(g/dL)</span></label>
-            <input type="number" id="hb" placeholder="e.g. 10.2" min="5" max="20" step="0.1">
+            <input type="number" id="hb" placeholder="e.g. 10.2" min="4" max="20" step="0.1">
           </div>
           <div class="form-group">
             <label for="plt">Platelets <span class="unit">(×10⁹/L)</span></label>
@@ -488,7 +647,6 @@
           <div class="demo-label-wrap">
             <label class="demo-main-label" for="demo-toggle">
               Include age &amp; sex adjustment
-              <em>(not recommended for routine use)</em>
             </label>
             <span class="demo-sub-note">
               Only validated for patients aged 65–90. Unadjusted score preferred for most clinical uses.
@@ -552,13 +710,15 @@
       <button type="button" id="btn-template" class="btn btn-outline">&#8659; Download Template (.xlsx)</button>
       <div class="info-note-batch" style="margin-top:14px;">
         <strong>Required columns:</strong>
-        <code>wbc_cont</code>, <code>hb_cont</code>, <code>plt_cont</code>, <code>blast_cont</code>,
-        <code>cpss_karyo</code> (0=Low, 1=Intermediate, 2=High),
-        mutations (0/1): <code>ASXL1</code> <code>DNMT3A</code> <code>EZH2</code> <code>RUNX1</code>
-        <code>SETBP1</code> <code>STAG2</code> <code>TET2</code> <code>TP53</code> <code>U2AF1</code>.
-        Optional <code>id</code> column for labeling.
-        <code>sex</code> and <code>age</code> only needed when using demographics adjustment.
-        Missing numerical values are imputed with their training-set mean.
+        <code>wbc</code>, <code>hb</code>, <code>plt</code>, <code>blasts</code>,
+        <code>karyo</code> (0=Low, 1=Intermediate, 2=High).
+        Rows missing any of these will not be scored.<br>
+        <strong>Optional:</strong>
+        mutation columns (0/1): <code>ASXL1</code> <code>DNMT3A</code> <code>EZH2</code> <code>RUNX1</code>
+        <code>SETBP1</code> <code>STAG2</code> <code>TET2</code> <code>TP53</code> <code>U2AF1</code>
+        (absent or blank = wild-type);
+        <code>id</code> for row labels;
+        <code>sex</code> (1=Male, 0=Female) and <code>age</code> when using demographics adjustment.
       </div>
     </div>
 
@@ -584,7 +744,7 @@
         </label>
         <div class="demo-label-wrap">
           <label class="demo-main-label" for="batch-demo-toggle">
-            Include age &amp; sex adjustment <em>(not recommended for routine use)</em>
+            Include age &amp; sex adjustment
           </label>
           <span class="demo-sub-note">
             Requires <code style="font-size:0.73rem; background:rgba(0,0,0,0.06); padding:1px 4px; border-radius:2px;">sex</code>
@@ -598,19 +758,37 @@
     <!-- Results -->
     <div class="batch-step">
       <div class="section-title">Results</div>
-      <div id="batch-results"><p class="empty-msg">Upload a file to see results.</p></div>
-      <div class="btn-row">
+      <div class="btn-row" style="margin-top:0; margin-bottom:16px;">
         <button type="button" id="btn-download-results" class="btn btn-primary" disabled>
           &#8659; Download Results (.xlsx)
         </button>
       </div>
+      <ul class="warning-list" id="batch-warnings"></ul>
+      <div id="batch-results" style="max-height:420px; overflow-y:auto;"><p class="empty-msg">Upload a file to see results.</p></div>
     </div>
 
   </div><!-- /panel-batch -->
 
+  <!-- Print sheet (hidden; shown only in @media print) -->
+  <div id="print-sheet"></div>
+
   <!-- Reference -->
   <div class="reference-note">
     <strong>Reference:</strong> [Citation in press — reference to be added upon publication]
+  </div>
+
+  <!-- Acknowledgments -->
+  <div class="reference-note" style="margin-top:0.5rem;">
+    <strong>Open source:</strong> Batch processing uses <a href="https://sheetjs.com" style="color:inherit;">SheetJS Community Edition</a> (Apache 2.0).
+  </div>
+
+  <!-- Disclaimer -->
+  <div class="disclaimer-note">
+    <strong>Investigational use only.</strong>
+    This tool is intended for research purposes and to support — not replace — the clinical judgment of qualified healthcare professionals.
+    It has not been reviewed or approved as a medical device by the FDA, EMA, or any other regulatory authority.
+    Risk estimates are derived from a retrospective cohort and carry inherent uncertainty; they should be interpreted in the full clinical context of each individual patient.
+    The authors assume no liability for clinical decisions made on the basis of this tool.
   </div>
 </main>
 
