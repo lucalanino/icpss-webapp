@@ -2,12 +2,12 @@
 
 // ─── Static model parameters (ported from R) ─────────────────────────────────
 // Feature order (28 features):
-// [age, wbc_cont, hb_cont, plt_cont, blast_cont,
+// [age, wbc, hb, plt, blasts,
 //  sex1, sex0,
 //  ASXL11, ASXL10, DNMT3A1, DNMT3A0, EZH21, EZH20,
 //  RUNX11, RUNX10, SETBP11, SETBP10, STAG21, STAG20,
 //  TET21, TET20, TP531, TP530, U2AF11, U2AF10,
-//  cpss_karyo2, cpss_karyo1, cpss_karyo0]
+//  karyo2, karyo1, karyo0]
 
 const MEANS = [
   72.4402606806662, 17.024112961622,  11.1337436640116, 153.790731354091, 5.16364952932657,
@@ -69,6 +69,16 @@ const CLASS_NAMES = {
   VH: 'Very High'
 };
 
+// Outcome data by risk class index (0=VL … 4=VH)
+// Source: [Citation in press]
+const OUTCOMES = [
+  { surv5y: '71%', surv5y_ci: '65–77%',  aml3y: '6.5%', aml3y_ci: '4.3–9.3%' },
+  { surv5y: '50%', surv5y_ci: '46–55%',  aml3y: '12%',  aml3y_ci: '9.9–14%'  },
+  { surv5y: '29%', surv5y_ci: '23–36%',  aml3y: '15%',  aml3y_ci: '12–19%'   },
+  { surv5y: '15%', surv5y_ci: '9.6–23%', aml3y: '17%',  aml3y_ci: '14–21%'   },
+  { surv5y: '3.2%',surv5y_ci: '0.6–18%', aml3y: '27%',  aml3y_ci: '21–34%'   },
+];
+
 // ─── Encoding ─────────────────────────────────────────────────────────────────
 
 /**
@@ -76,8 +86,8 @@ const CLASS_NAMES = {
  * Missing values are represented as NaN.
  *
  * @param {Object} raw - Raw patient inputs:
- *   sex (1=Male, 0=Female), age, wbc_cont, hb_cont, plt_cont, blast_cont,
- *   cpss_karyo (0/1/2), ASXL1, DNMT3A, EZH2, RUNX1, SETBP1, STAG2, TET2, TP53, U2AF1
+ *   sex (1=Male, 0=Female), age, wbc, hb, plt, blasts,
+ *   karyo (0/1/2), ASXL1, DNMT3A, EZH2, RUNX1, SETBP1, STAG2, TET2, TP53, U2AF1
  * @returns {number[]} 28-element array
  */
 function encodePatient(raw) {
@@ -90,11 +100,11 @@ function encodePatient(raw) {
 
   const sex = toNum(raw.sex);
   const age = toNum(raw.age);
-  const wbc = toNum(raw.wbc_cont);
-  const hb  = toNum(raw.hb_cont);
-  const plt = toNum(raw.plt_cont);
-  const bla = toNum(raw.blast_cont);
-  const kar = toNum(raw.cpss_karyo);
+  const wbc = toNum(raw.wbc);
+  const hb  = toNum(raw.hb);
+  const plt = toNum(raw.plt);
+  const bla = toNum(raw.blasts);
+  const kar = toNum(raw.karyo);
 
   return [
     age, wbc, hb, plt, bla,
@@ -111,7 +121,7 @@ function encodePatient(raw) {
     toBin(raw.TET2,   1), toBin(raw.TET2,   0),
     toBin(raw.TP53,   1), toBin(raw.TP53,   0),
     toBin(raw.U2AF1,  1), toBin(raw.U2AF1,  0),
-    // cpss_karyo: three-way one-hot [2, 1, 0]
+    // karyo: three-way one-hot [2, 1, 0]
     isNaN(kar) ? NaN : (kar === 2 ? 1 : 0),
     isNaN(kar) ? NaN : (kar === 1 ? 1 : 0),
     isNaN(kar) ? NaN : (kar === 0 ? 1 : 0),
@@ -172,8 +182,8 @@ function assignClass(score) {
 
 // ─── Batch: xlsx parsing ──────────────────────────────────────────────────────
 
-const BATCH_COLUMNS = ['id', 'sex', 'age', 'wbc_cont', 'hb_cont', 'plt_cont',
-  'blast_cont', 'cpss_karyo', 'ASXL1', 'DNMT3A', 'EZH2', 'RUNX1',
+const BATCH_COLUMNS = ['id', 'sex', 'age', 'wbc', 'hb', 'plt',
+  'blasts', 'karyo', 'ASXL1', 'DNMT3A', 'EZH2', 'RUNX1',
   'SETBP1', 'STAG2', 'TET2', 'TP53', 'U2AF1'];
 
 /**
@@ -212,20 +222,93 @@ function parseXlsx(buffer) {
   return { patients: normalized, errors: [] };
 }
 
+// Required fields that must be present for a row to be scored (no imputation)
+const BATCH_REQUIRED = ['wbc', 'hb', 'plt', 'blasts', 'karyo'];
+
+// Shared range rules — must match validateSingleForm in form helpers
+const FIELD_RULES = [
+  { key: 'wbc',    label: 'WBC',            min: 0.1, max: 500,  isInt: false },
+  { key: 'hb',     label: 'Hemoglobin',     min: 4,   max: 20,   isInt: false },
+  { key: 'plt',    label: 'Platelets',      min: 1,   max: 1500, isInt: true  },
+  { key: 'blasts', label: 'BM Blast Count', min: 0,   max: 19,   isInt: true  },
+];
+
+/**
+ * Validate a batch row against the same rules as single-patient mode.
+ * Returns an array of issue strings (empty = valid).
+ */
+function validateBatchRow(row, includeDemographics) {
+  const issues = [];
+
+  for (const f of FIELD_RULES) {
+    const v = row[f.key];
+    if (v === null || v === undefined || String(v).trim() === '') continue; // missing handled separately
+    const n = Number(v);
+    if (isNaN(n)) { issues.push(`${f.label}: not a number`); continue; }
+    if (n < f.min || n > f.max) { issues.push(`${f.label} out of range (${f.min}–${f.max})`); continue; }
+    if (f.isInt && !Number.isInteger(n)) { issues.push(`${f.label}: must be a whole number`); }
+  }
+
+  // Karyo value must be 0, 1, or 2
+  const karRaw = row.karyo;
+  if (karRaw !== null && karRaw !== undefined && String(karRaw).trim() !== '') {
+    const kar = Number(karRaw);
+    if (isNaN(kar) || ![0, 1, 2].includes(kar)) {
+      issues.push('Cytogenetic Risk must be 0 (Low), 1 (Intermediate), or 2 (High)');
+    }
+  }
+
+  if (includeDemographics) {
+    const ageRaw = row.age;
+    if (ageRaw !== null && ageRaw !== undefined && String(ageRaw).trim() !== '') {
+      const age = Number(ageRaw);
+      if (isNaN(age) || age < 65 || age > 90) {
+        issues.push('Age out of range for demographics adjustment (65–90)');
+      }
+    }
+    const sexRaw = row.sex;
+    if (sexRaw !== null && sexRaw !== undefined && String(sexRaw).trim() !== '') {
+      const sex = Number(sexRaw);
+      if (isNaN(sex) || ![0, 1].includes(sex)) {
+        issues.push('Sex must be 0 (Female) or 1 (Male)');
+      }
+    }
+  }
+
+  return issues;
+}
+
 /**
  * Run batch computation on parsed patient rows.
+ * Rows missing required fields or failing range validation are skipped.
  * @param {Object[]} patients
  * @param {boolean} includeDemographics
- * @returns {Object[]} result rows: { id, score, riskClass }
+ * @returns {Object[]} result rows: { id, score, riskClass, skipped, skipReason }
  */
 function computeBatch(patients, includeDemographics) {
   return patients.map((row, idx) => {
     const id = row.id !== null && row.id !== undefined && row.id !== ''
       ? row.id
       : `Patient_${idx + 1}`;
+
+    const missing = BATCH_REQUIRED.filter(f => {
+      const v = row[f];
+      return v === null || v === undefined || String(v).trim() === '';
+    });
+    if (missing.length > 0) {
+      return { id, score: null, riskClass: null, skipped: true,
+               skipReason: `Missing required field(s): ${missing.join(', ')}` };
+    }
+
+    const issues = validateBatchRow(row, includeDemographics);
+    if (issues.length > 0) {
+      return { id, score: null, riskClass: null, skipped: true,
+               skipReason: `Invalid value(s): ${issues.join('; ')}` };
+    }
+
     const encoded = encodePatient(row);
     const { score, riskClass } = computeScore(encoded, includeDemographics);
-    return { id, score, riskClass };
+    return { id, score, riskClass, skipped: false, skipReason: '' };
   });
 }
 
@@ -246,14 +329,18 @@ function generateTemplate() {
 
 /**
  * Convert batch results to an xlsx ArrayBuffer for download.
- * @param {Object[]} results - array of { id, score, riskClass }
+ * @param {Object[]} results - array of { id, score, riskClass, skipped }
  * @returns {ArrayBuffer}
  */
 function resultsToXlsx(results) {
-  const header = ['ID', 'Class', 'Score'];
-  const rows = results.map(r => [r.id, r.riskClass, r.score.toFixed(4)]);
+  const header = ['ID', 'Class', 'Score', 'Note'];
+  const rows = results.map(r =>
+    r.skipped
+      ? [r.id, '', '', r.skipReason || 'Excluded']
+      : [r.id, r.riskClass, r.score.toFixed(4), '']
+  );
   const ws = XLSX.utils.aoa_to_sheet([header, ...rows]);
-  ws['!cols'] = [{ wch: 20 }, { wch: 8 }, { wch: 12 }];
+  ws['!cols'] = [{ wch: 20 }, { wch: 8 }, { wch: 12 }, { wch: 45 }];
   const wb = XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(wb, ws, 'iCPSS_Results');
   return XLSX.write(wb, { type: 'array', bookType: 'xlsx' });
@@ -289,11 +376,15 @@ function renderSingleResult(result) {
   const container = document.getElementById('result-container');
   if (!result) {
     container.innerHTML = '';
+    const sheet = document.getElementById('print-sheet');
+    if (sheet) sheet.innerHTML = '';
     return;
   }
   const { score, riskClass } = result;
   const col = CLASS_COLORS[riskClass] || { bg: '#888', text: '#fff' };
   const fullName = CLASS_NAMES[riskClass] || riskClass;
+  const classIdx = CLASSES.indexOf(riskClass);
+  const outcome  = OUTCOMES[classIdx];
 
   // Build risk rail stops
   const railStops = CLASSES.map(c => {
@@ -310,6 +401,20 @@ function renderSingleResult(result) {
     return `<span class="rail-lbl${isActive ? ' active' : ''}"${lblStyle}>${c}</span>`;
   }).join('');
 
+  const outcomeBlock = outcome ? `
+    <div class="outcome-stats">
+      <div class="outcome-stat">
+        <div class="outcome-value">${outcome.surv5y}</div>
+        <div class="outcome-ci">(95% CI: ${outcome.surv5y_ci})</div>
+        <div class="outcome-label">5-year overall survival</div>
+      </div>
+      <div class="outcome-stat">
+        <div class="outcome-value">${outcome.aml3y}</div>
+        <div class="outcome-ci">(95% CI: ${outcome.aml3y_ci})</div>
+        <div class="outcome-label">3-year AML evolution</div>
+      </div>
+    </div>` : '';
+
   container.innerHTML = `
     <div class="result-section">
       <div class="result-class-name" style="color:${col.bg}">${fullName}</div>
@@ -319,7 +424,101 @@ function renderSingleResult(result) {
         ${railStops}
       </div>
       <div class="rail-labels">${railLabels}</div>
+      ${outcomeBlock}
+      <div style="margin-top:18px;">
+        <button type="button" class="btn-print" onclick="window.print()">Print / Save as PDF</button>
+      </div>
     </div>`;
+}
+
+/**
+ * Populate the hidden print sheet with full result + inputs for printing.
+ */
+function populatePrintSheet(result, raw, includeDemographics) {
+  const sheet = document.getElementById('print-sheet');
+  if (!sheet) return;
+
+  const { score, riskClass } = result;
+  const col      = CLASS_COLORS[riskClass] || { bg: '#888' };
+  const fullName = CLASS_NAMES[riskClass] || riskClass;
+  const classIdx = CLASSES.indexOf(riskClass);
+  const outcome  = OUTCOMES[classIdx];
+
+  const now     = new Date();
+  const dateStr = now.toLocaleDateString('en-GB', { day: '2-digit', month: 'long', year: 'numeric' });
+  const timeStr = now.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' });
+
+  const railStops = CLASSES.map(c => {
+    const isActive = c === riskClass;
+    const sc = CLASS_COLORS[c] || { bg: '#888' };
+    return `<div class="rail-stop${isActive ? ' active' : ''}"><div class="rail-dot"${isActive ? ` style="background:${sc.bg}"` : ''}></div></div>`;
+  }).join('');
+
+  const railLabels = CLASSES.map(c => {
+    const isActive = c === riskClass;
+    const sc = CLASS_COLORS[c] || { bg: '#888' };
+    return `<span class="rail-lbl${isActive ? ' active' : ''}"${isActive ? ` style="color:${sc.bg}"` : ''}>${c}</span>`;
+  }).join('');
+
+  const outHtml = outcome ? `
+    <div class="ps-outcomes">
+      <div class="ps-stat">
+        <div class="ps-stat-val">${outcome.surv5y}</div>
+        <div class="ps-stat-ci">95% CI: ${outcome.surv5y_ci}</div>
+        <div class="ps-stat-lbl">5-year overall survival</div>
+      </div>
+      <div class="ps-stat">
+        <div class="ps-stat-val">${outcome.aml3y}</div>
+        <div class="ps-stat-ci">95% CI: ${outcome.aml3y_ci}</div>
+        <div class="ps-stat-lbl">3-year AML evolution</div>
+      </div>
+    </div>` : '';
+
+  const karyoLabel = { '0': 'Low', '1': 'Intermediate', '2': 'High' };
+  const mutGenes   = ['ASXL1','DNMT3A','EZH2','RUNX1','SETBP1','STAG2','TET2','TP53','U2AF1'];
+  const mutPos     = mutGenes.filter(g => Number(raw[g]) === 1);
+  const demoStr    = includeDemographics
+    ? `${raw.sex == 1 ? 'Male' : 'Female'}, age ${raw.age}`
+    : 'Not included';
+
+  sheet.innerHTML = `
+    <div class="ps-watermark">For Investigational Use Only</div>
+    <div class="ps-header">
+      <div>
+        <div class="ps-title"><strong>iCPSS</strong> Risk Score Calculator</div>
+        <div class="ps-subtitle">Chronic Myelomonocytic Leukemia</div>
+      </div>
+      <div class="ps-timestamp">Computed: ${dateStr} &middot; ${timeStr}</div>
+    </div>
+    <hr class="ps-rule">
+    <div class="ps-class-name" style="color:${col.bg}">${fullName}</div>
+    <div class="ps-score-meta">Risk class: <strong>${riskClass}</strong> &ensp;&middot;&ensp; Score: <strong>${score.toFixed(4)}</strong></div>
+    <div class="risk-rail" style="margin:16px 0 4px"><div class="risk-rail-track"></div>${railStops}</div>
+    <div class="rail-labels">${railLabels}</div>
+    ${outHtml}
+    <hr class="ps-rule">
+    <div class="ps-section-label">Parameters Entered</div>
+    <table class="ps-inputs-table">
+      <tr>
+        <td class="ps-il">WBC</td><td class="ps-iv">${raw.wbc} &times;10&#x2079;/L</td>
+        <td class="ps-il">Hemoglobin</td><td class="ps-iv">${raw.hb} g/dL</td>
+      </tr>
+      <tr>
+        <td class="ps-il">Platelets</td><td class="ps-iv">${raw.plt} &times;10&#x2079;/L</td>
+        <td class="ps-il">BM Blast Count</td><td class="ps-iv">${raw.blasts}%</td>
+      </tr>
+      <tr>
+        <td class="ps-il">Cytogenetic Risk</td><td class="ps-iv">${karyoLabel[String(raw.karyo)] || '&mdash;'}</td>
+        <td class="ps-il">Demographics</td><td class="ps-iv">${demoStr}</td>
+      </tr>
+      <tr>
+        <td class="ps-il">Mutations detected</td>
+        <td class="ps-iv" colspan="3">${mutPos.length > 0 ? mutPos.join(', ') : 'None'}</td>
+      </tr>
+    </table>
+    <hr class="ps-rule">
+    <div class="ps-ref">[Citation in press &mdash; reference to be added upon publication]</div>
+    <div class="ps-disc"><strong>Investigational use only.</strong> This tool is intended for research purposes and to support &mdash; not replace &mdash; the clinical judgment of qualified healthcare professionals. It has not been reviewed or approved as a medical device by the FDA, EMA, or any other regulatory authority. Risk estimates are derived from a retrospective cohort and carry inherent uncertainty; they should be interpreted in the full clinical context of each individual patient. The authors assume no liability for clinical decisions made on the basis of this tool.</div>`;
 }
 
 /**
@@ -333,6 +532,13 @@ function renderBatchTable(results) {
     return;
   }
   const rows = results.map(r => {
+    if (r.skipped) {
+      return `<tr style="color:var(--text-mute,#8c7b6a)">
+        <td>${escHtml(String(r.id))}</td>
+        <td style="font-size:0.82rem">—</td>
+        <td style="font-size:0.80rem;font-style:italic">${escHtml(r.skipReason || 'Excluded')}</td>
+      </tr>`;
+    }
     const col = CLASS_COLORS[r.riskClass] || { bg: '#888', text: '#fff' };
     return `<tr>
       <td>${escHtml(String(r.id))}</td>
@@ -393,6 +599,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const encoded = encodePatient(raw);
     const result  = computeScore(encoded, demoToggle.checked);
     renderSingleResult(result);
+    populatePrintSheet(result, raw, demoToggle.checked);
   });
 
   clearBtn.addEventListener('click', () => {
@@ -430,6 +637,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const file = batchFile.files[0];
     if (!file) return;
     clearErrors('batch-errors');
+    clearWarnings('batch-warnings');
     document.getElementById('batch-results').innerHTML = '<p class="loading-msg">Computing…</p>';
 
     const reader = new FileReader();
@@ -443,6 +651,16 @@ document.addEventListener('DOMContentLoaded', () => {
       batchResults = computeBatch(patients, batchDemo.checked);
       renderBatchTable(batchResults);
       document.getElementById('btn-download-results').disabled = false;
+      const skipped = batchResults.filter(r => r.skipped).length;
+      if (skipped > 0) {
+        const s = skipped === 1;
+        showWarnings([
+          `${skipped} ${s ? 'row was' : 'rows were'} excluded from scoring due to missing or invalid data. ` +
+          `${s ? 'It is' : 'They are'} flagged in the table and in the downloaded file.`
+        ], 'batch-warnings');
+      } else {
+        clearWarnings('batch-warnings');
+      }
     };
     reader.onerror = () => {
       showErrors(['Failed to read the file. Please try again.'], 'batch-errors');
@@ -470,11 +688,11 @@ function readSingleForm() {
   return {
     sex:        sexEl   ? Number(sexEl.value) : null,
     age:        g('age').value,
-    wbc_cont:   g('wbc').value,
-    hb_cont:    g('hb').value,
-    plt_cont:   g('plt').value,
-    blast_cont: g('blasts').value,
-    cpss_karyo: karyoEl ? karyoEl.value : null,
+    wbc:   g('wbc').value,
+    hb:    g('hb').value,
+    plt:   g('plt').value,
+    blasts: g('blasts').value,
+    karyo: karyoEl ? karyoEl.value : null,
     ASXL1:      g('ASXL1').checked  ? 1 : 0,
     DNMT3A:     g('DNMT3A').checked ? 1 : 0,
     EZH2:       g('EZH2').checked   ? 1 : 0,
@@ -493,10 +711,10 @@ function validateSingleForm(raw, includeDemographics) {
 
   // Required clinical fields
   const clinicalRequired = [
-    { val: raw.wbc_cont,   label: 'WBC'                     },
-    { val: raw.hb_cont,    label: 'Hemoglobin'              },
-    { val: raw.plt_cont,   label: 'Platelets'               },
-    { val: raw.blast_cont, label: 'Bone Marrow Blast Count' },
+    { val: raw.wbc,   label: 'WBC'                     },
+    { val: raw.hb,    label: 'Hemoglobin'              },
+    { val: raw.plt,   label: 'Platelets'               },
+    { val: raw.blasts, label: 'Bone Marrow Blast Count' },
   ];
   for (const f of clinicalRequired) {
     if (f.val === '' || f.val === null || f.val === undefined) {
@@ -504,17 +722,16 @@ function validateSingleForm(raw, includeDemographics) {
     }
   }
 
-  if (raw.cpss_karyo === null || raw.cpss_karyo === '' || raw.cpss_karyo === undefined) {
+  if (raw.karyo === null || raw.karyo === '' || raw.karyo === undefined) {
     errors.push('Cytogenetic Risk (CPSS) is required.');
   }
 
-  // Range + type validation (only for non-empty values)
-  const rangeFields = [
-    { val: raw.wbc_cont,   label: 'WBC',                     min: 0.1, max: 500,  isInt: false, warnAbove: 100 },
-    { val: raw.hb_cont,    label: 'Hemoglobin',              min: 5,   max: 20,   isInt: false, warnAbove: 15  },
-    { val: raw.plt_cont,   label: 'Platelets',               min: 1,   max: 1500, isInt: true,  warnAbove: null },
-    { val: raw.blast_cont, label: 'Bone Marrow Blast Count', min: 0,   max: 19,   isInt: true,  warnAbove: null },
-  ];
+  // Range + type validation — limits drawn from FIELD_RULES to stay in sync with batch mode
+  const WARN_ABOVE = { wbc: 100, hb: 15 };
+  const rangeFields = FIELD_RULES.map(f => ({
+    val: raw[f.key], label: f.label, min: f.min, max: f.max, isInt: f.isInt,
+    warnAbove: WARN_ABOVE[f.key] ?? null,
+  }));
   for (const f of rangeFields) {
     if (f.val === '' || f.val === null || f.val === undefined) continue;
     const n = Number(f.val);
