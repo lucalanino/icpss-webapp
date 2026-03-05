@@ -294,15 +294,31 @@ function renderSingleResult(result) {
   const { score, riskClass } = result;
   const col = CLASS_COLORS[riskClass] || { bg: '#888', text: '#fff' };
   const fullName = CLASS_NAMES[riskClass] || riskClass;
+
+  // Build risk rail stops
+  const railStops = CLASSES.map(c => {
+    const isActive = c === riskClass;
+    const stopCol  = CLASS_COLORS[c] || { bg: '#888' };
+    const dotStyle = isActive ? ` style="background:${stopCol.bg}"` : '';
+    return `<div class="rail-stop${isActive ? ' active' : ''}"><div class="rail-dot"${dotStyle}></div></div>`;
+  }).join('');
+
+  const railLabels = CLASSES.map(c => {
+    const isActive = c === riskClass;
+    const stopCol  = CLASS_COLORS[c] || { bg: '#888' };
+    const lblStyle = isActive ? ` style="color:${stopCol.bg}"` : '';
+    return `<span class="rail-lbl${isActive ? ' active' : ''}"${lblStyle}>${c}</span>`;
+  }).join('');
+
   container.innerHTML = `
-    <div class="result-card">
-      <div class="result-badge" style="background:${col.bg};color:${col.text}">
-        ${riskClass}
+    <div class="result-section">
+      <div class="result-class-name" style="color:${col.bg}">${fullName}</div>
+      <div class="result-meta">Risk class: <strong>${riskClass}</strong> &ensp;·&ensp; Score: <strong>${score.toFixed(4)}</strong></div>
+      <div class="risk-rail">
+        <div class="risk-rail-track"></div>
+        ${railStops}
       </div>
-      <div class="result-score">
-        <strong>${riskClass}</strong> — ${fullName}<br>
-        Score: <strong>${score.toFixed(4)}</strong>
-      </div>
+      <div class="rail-labels">${railLabels}</div>
     </div>`;
 }
 
@@ -381,6 +397,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
   clearBtn.addEventListener('click', () => {
     singleForm.reset();
+    // Sync demo section visibility after form reset (reset() doesn't fire 'change')
+    document.getElementById('demo-toggle').dispatchEvent(new Event('change'));
     renderSingleResult(null);
     clearErrors();
     clearWarnings('single-warnings');
@@ -447,15 +465,16 @@ document.addEventListener('DOMContentLoaded', () => {
 
 function readSingleForm() {
   const g = (id) => document.getElementById(id);
-  const sexEl = document.querySelector('input[name="sex"]:checked');
+  const sexEl   = document.querySelector('input[name="sex"]:checked');
+  const karyoEl = document.querySelector('input[name="karyo"]:checked');
   return {
-    sex:        sexEl ? Number(sexEl.value) : null,
+    sex:        sexEl   ? Number(sexEl.value) : null,
     age:        g('age').value,
     wbc_cont:   g('wbc').value,
     hb_cont:    g('hb').value,
     plt_cont:   g('plt').value,
     blast_cont: g('blasts').value,
-    cpss_karyo: g('karyo').value !== '' ? g('karyo').value : null,
+    cpss_karyo: karyoEl ? karyoEl.value : null,
     ASXL1:      g('ASXL1').checked  ? 1 : 0,
     DNMT3A:     g('DNMT3A').checked ? 1 : 0,
     EZH2:       g('EZH2').checked   ? 1 : 0,

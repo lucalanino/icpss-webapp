@@ -5,387 +5,409 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>iCPSS — CMML Risk Score Calculator</title>
   <style>
-    /* ── Reset & base ────────────────────────────────────────────────────── */
+    :root {
+      --bg:         #faf7f2;
+      --bg-input:   #ffffff;
+      --accent:     #7c1d2e;
+      --accent-hov: #6a1827;
+      --text:       #2c2017;
+      --text-mid:   #5a4735;
+      --text-mute:  #8c7b6a;
+      --border:     #e0d8ce;
+      --border-in:  #c8bfb4;
+      --focus-ring: rgba(124,29,46,0.15);
+    }
+
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
     body {
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
-                   Helvetica, Arial, sans-serif;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
       font-size: 15px;
-      background: #f4f6f8;
-      color: #1a1a2e;
+      background: var(--bg);
+      color: var(--text);
       min-height: 100vh;
     }
 
     /* ── Header ──────────────────────────────────────────────────────────── */
     header {
-      background: #1a3a6e;
-      color: #fff;
-      padding: 18px 32px;
+      border-bottom: 1px solid var(--border);
+      padding: 18px 32px 16px;
+    }
+    .header-inner {
+      max-width: 860px;
+      margin: 0 auto;
       display: flex;
       align-items: baseline;
       gap: 14px;
     }
-    header h1 { font-size: 1.45rem; font-weight: 700; letter-spacing: 0.02em; }
-    header p  { font-size: 0.88rem; opacity: 0.82; }
+    .site-name {
+      font-family: Georgia, "Times New Roman", serif;
+      font-size: 1.5rem;
+      font-weight: normal;
+      color: var(--text);
+      letter-spacing: -0.01em;
+    }
+    .site-name strong { color: var(--accent); }
+    .site-sub { font-size: 0.82rem; color: var(--text-mute); }
 
-    /* ── Main container ──────────────────────────────────────────────────── */
+    /* ── Main ────────────────────────────────────────────────────────────── */
     main {
       max-width: 860px;
-      margin: 28px auto;
-      padding: 0 16px 60px;
+      margin: 0 auto;
+      padding: 28px 24px 80px;
     }
 
     /* ── Tabs ────────────────────────────────────────────────────────────── */
     .tab-bar {
       display: flex;
-      gap: 4px;
-      border-bottom: 2px solid #d1d8e0;
-      margin-bottom: 24px;
+      border-bottom: 1px solid var(--border);
+      margin-bottom: 30px;
     }
     .tab-btn {
-      padding: 9px 22px;
-      border: none;
-      background: none;
-      font-size: 0.96rem;
-      font-weight: 500;
-      color: #555;
+      padding: 7px 20px 9px;
+      border: none; background: none;
+      font-size: 0.90rem; font-weight: 400;
+      color: var(--text-mute);
       cursor: pointer;
-      border-bottom: 3px solid transparent;
-      margin-bottom: -2px;
-      border-radius: 4px 4px 0 0;
+      border-bottom: 2px solid transparent;
+      margin-bottom: -1px;
       transition: color 0.15s, border-color 0.15s;
     }
-    .tab-btn:hover   { color: #1a3a6e; }
-    .tab-btn.active  { color: #1a3a6e; border-bottom-color: #1a3a6e; font-weight: 600; }
-    .tab-panel       { display: none; }
-    .tab-panel.active{ display: block; }
+    .tab-btn:hover { color: var(--accent); }
+    .tab-btn.active { color: var(--accent); border-bottom-color: var(--accent); font-weight: 600; }
+    .tab-panel  { display: none; }
+    .tab-panel.active { display: block; }
 
-    /* ── Cards ───────────────────────────────────────────────────────────── */
-    .card {
-      background: #fff;
-      border: 1px solid #d8dde6;
-      border-radius: 8px;
-      padding: 22px 24px;
-      margin-bottom: 18px;
-    }
-    .card-title {
-      font-size: 0.82rem;
+    /* ── Form sections ───────────────────────────────────────────────────── */
+    .form-section { margin-bottom: 26px; }
+    .section-title {
+      font-size: 0.72rem;
       font-weight: 700;
       text-transform: uppercase;
-      letter-spacing: 0.07em;
-      color: #1a3a6e;
-      margin-bottom: 16px;
-      padding-bottom: 8px;
-      border-bottom: 1px solid #e8ecf0;
+      letter-spacing: 0.14em;
+      color: var(--text-mid);
+      margin-bottom: 14px;
+      padding-bottom: 7px;
+      border-bottom: 1px solid var(--border);
+    }
+    .subsection-label {
+      font-size: 0.82rem;
+      font-weight: 600;
+      color: var(--text-mid);
+      margin-top: 20px;
+      margin-bottom: 10px;
     }
 
-    /* ── Toggle (demographics — de-emphasized) ───────────────────────────── */
-    .demo-row-secondary {
-      display: flex;
-      align-items: flex-start;
-      gap: 10px;
-      background: #f9fafb;
-      border: 1px solid #e2e6ea;
-      border-radius: 6px;
-      padding: 10px 16px;
+    /* ── Numeric inputs ──────────────────────────────────────────────────── */
+    .form-grid-4 {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 12px 16px;
+    }
+    .form-group { display: flex; flex-direction: column; gap: 5px; }
+    .form-group > label {
+      font-size: 0.76rem;
+      font-weight: 600;
+      color: var(--text-mid);
+      letter-spacing: 0.01em;
+    }
+    .unit {
+      font-size: 0.72rem;
+      font-weight: 400;
+      color: var(--text-mute);
+      margin-left: 3px;
+    }
+    input[type="number"], input[type="text"] {
+      padding: 8px 10px;
+      border: 1px solid var(--border-in);
+      border-radius: 4px;
+      font-size: 0.94rem;
+      color: var(--text);
+      background: var(--bg-input);
+      width: 100%;
+      font-variant-numeric: tabular-nums;
+      transition: border-color 0.15s, box-shadow 0.15s;
+    }
+    input[type="number"]:focus, input[type="text"]:focus {
+      outline: none;
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px var(--focus-ring);
+    }
+
+    /* ── Karyotype pills ─────────────────────────────────────────────────── */
+    .karyo-pills { display: flex; gap: 8px; flex-wrap: wrap; }
+    .karyo-pill input[type="radio"] { display: none; }
+    .karyo-pill label {
+      display: inline-flex; align-items: center;
+      padding: 7px 18px;
+      border: 1.5px solid var(--border-in);
+      border-radius: 100px;
+      font-size: 0.86rem; font-weight: 500;
+      color: var(--text-mid);
+      cursor: pointer;
+      transition: border-color 0.15s, color 0.15s, background 0.15s;
+      user-select: none;
+      background: var(--bg-input);
+      white-space: nowrap;
+    }
+    .karyo-pill label:hover { border-color: var(--accent); color: var(--accent); }
+    .karyo-pill input[type="radio"]:checked + label {
+      background: var(--accent); border-color: var(--accent); color: #fff;
+    }
+    .karyo-hint-text {
+      font-size: 0.75rem;
+      color: var(--text-mute);
+      line-height: 1.65;
+      margin-top: 10px;
+    }
+    .karyo-hint-text strong { color: var(--text-mid); font-weight: 600; }
+
+    /* ── Mutation chips ──────────────────────────────────────────────────── */
+    .mutation-subtext {
+      font-size: 0.79rem;
+      color: var(--text-mute);
       margin-bottom: 12px;
     }
-    .demo-label-wrap {
-      display: flex;
-      flex-direction: column;
-      gap: 4px;
-    }
-    .demo-main-label {
-      font-size: 0.88rem;
-      font-weight: 500;
-      color: #555;
+    .mutation-grid { display: flex; flex-wrap: wrap; gap: 7px; }
+    .mut-chip input[type="checkbox"] { display: none; }
+    .mut-chip label {
+      display: inline-flex; align-items: center;
+      padding: 5px 14px;
+      border: 1.5px solid var(--border-in);
+      border-radius: 4px;
+      font-size: 0.82rem; font-weight: 600;
+      font-family: "SF Mono", Consolas, Menlo, monospace;
+      color: var(--text-mid);
       cursor: pointer;
+      transition: border-color 0.15s, color 0.15s, background 0.15s;
+      user-select: none;
+      background: var(--bg-input);
+      letter-spacing: 0.02em;
     }
-    .demo-sub-note {
-      font-size: 0.78rem;
-      color: #888;
+    .mut-chip label:hover { border-color: var(--accent); color: var(--accent); background: #fdf5f7; }
+    .mut-chip input[type="checkbox"]:checked + label {
+      background: var(--accent); border-color: var(--accent); color: #fff;
     }
 
+    /* ── Sex pills ───────────────────────────────────────────────────────── */
+    .sex-pills { display: flex; gap: 8px; }
+    .sex-pill input[type="radio"] { display: none; }
+    .sex-pill label {
+      display: inline-flex; align-items: center;
+      padding: 7px 18px;
+      border: 1.5px solid var(--border-in);
+      border-radius: 100px;
+      font-size: 0.86rem; font-weight: 500;
+      color: var(--text-mid);
+      cursor: pointer;
+      transition: border-color 0.15s, color 0.15s, background 0.15s;
+      user-select: none;
+      background: var(--bg-input);
+    }
+    .sex-pill label:hover { border-color: var(--accent); color: var(--accent); }
+    .sex-pill input[type="radio"]:checked + label {
+      background: var(--accent); border-color: var(--accent); color: #fff;
+    }
+
+    /* ── Demographics toggle ─────────────────────────────────────────────── */
+    .demo-row-secondary {
+      display: flex; align-items: flex-start; gap: 10px; padding: 10px 0;
+    }
+    .demo-label-wrap { display: flex; flex-direction: column; gap: 3px; }
+    .demo-main-label { font-size: 0.83rem; font-weight: 500; color: var(--text-mute); cursor: pointer; }
+    .demo-sub-note { font-size: 0.74rem; color: var(--text-mute); }
     .toggle-switch {
-      position: relative;
-      display: inline-block;
-      width: 40px;
-      height: 22px;
-      flex-shrink: 0;
-      margin-top: 1px;
+      position: relative; display: inline-block;
+      width: 36px; height: 20px; flex-shrink: 0; margin-top: 2px;
     }
     .toggle-switch input { opacity: 0; width: 0; height: 0; }
     .toggle-slider {
       position: absolute; cursor: pointer; inset: 0;
-      background: #bbb;
-      border-radius: 22px;
-      transition: background 0.2s;
+      background: var(--border-in); border-radius: 20px; transition: background 0.2s;
     }
     .toggle-slider::before {
-      content: '';
-      position: absolute;
-      width: 16px; height: 16px;
-      left: 3px; bottom: 3px;
-      background: #fff;
-      border-radius: 50%;
-      transition: transform 0.2s;
+      content: ''; position: absolute;
+      width: 14px; height: 14px; left: 3px; bottom: 3px;
+      background: #fff; border-radius: 50%; transition: transform 0.2s;
     }
-    .toggle-switch input:checked + .toggle-slider { background: #1a3a6e; }
-    .toggle-switch input:checked + .toggle-slider::before { transform: translateX(18px); }
-
-    /* ── Form fields ─────────────────────────────────────────────────────── */
-    .form-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(190px, 1fr));
-      gap: 14px 18px;
-    }
-    .form-group { display: flex; flex-direction: column; gap: 5px; }
-    .form-group label {
-      font-size: 0.84rem;
-      font-weight: 600;
-      color: #333;
-    }
-    .form-group .unit {
-      font-size: 0.78rem;
-      font-weight: 400;
-      color: #777;
-      margin-left: 4px;
-    }
-    input[type="number"],
-    input[type="text"],
-    select {
-      padding: 7px 10px;
-      border: 1px solid #c8ced6;
-      border-radius: 5px;
-      font-size: 0.93rem;
-      color: #1a1a2e;
-      background: #fff;
-      transition: border-color 0.15s;
-      width: 100%;
-    }
-    input[type="number"]:focus,
-    input[type="text"]:focus,
-    select:focus {
-      outline: none;
-      border-color: #1a3a6e;
-      box-shadow: 0 0 0 2px rgba(26,58,110,0.12);
-    }
-    select { cursor: pointer; }
-
-    /* ── Radio (sex) ─────────────────────────────────────────────────────── */
-    .radio-group { display: flex; gap: 16px; align-items: center; margin-top: 2px; }
-    .radio-group label {
-      display: flex; align-items: center; gap: 5px;
-      font-size: 0.93rem; font-weight: 400; cursor: pointer;
-    }
-    input[type="radio"] { accent-color: #1a3a6e; width: 15px; height: 15px; }
-
-    /* ── Checkboxes (mutations) ──────────────────────────────────────────── */
-    .mutation-grid {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 10px 18px;
-      margin-top: 2px;
-    }
-    .mutation-grid label {
-      display: flex; align-items: center; gap: 6px;
-      font-size: 0.93rem; cursor: pointer;
-      background: #f4f6f8;
-      border: 1px solid #d1d8e0;
-      border-radius: 5px;
-      padding: 5px 12px;
-      transition: background 0.15s, border-color 0.15s;
-      user-select: none;
-    }
-    .mutation-grid label:hover { background: #eef3fb; border-color: #9ab3d8; }
-    .mutation-grid input[type="checkbox"] { accent-color: #1a3a6e; width: 15px; height: 15px; }
+    .toggle-switch input:checked + .toggle-slider { background: var(--accent); }
+    .toggle-switch input:checked + .toggle-slider::before { transform: translateX(16px); }
 
     /* ── Buttons ─────────────────────────────────────────────────────────── */
+    .btn-row { display: flex; gap: 10px; align-items: center; margin-top: 22px; }
     .btn {
       display: inline-flex; align-items: center; gap: 6px;
-      padding: 9px 20px;
-      border: none; border-radius: 6px;
-      font-size: 0.93rem; font-weight: 600;
+      padding: 10px 24px;
+      border: none; border-radius: 5px;
+      font-size: 0.92rem; font-weight: 600;
       cursor: pointer;
-      transition: opacity 0.15s, transform 0.1s;
+      transition: background 0.15s, transform 0.1s;
     }
-    .btn:active  { transform: scale(0.97); }
-    .btn:disabled{ opacity: 0.45; cursor: not-allowed; }
-    .btn-primary { background: #1a3a6e; color: #fff; }
-    .btn-primary:hover:not(:disabled) { background: #14306b; }
+    .btn:active { transform: scale(0.98); }
+    .btn:disabled { opacity: 0.4; cursor: not-allowed; }
+    .btn-primary { background: var(--accent); color: #fff; }
+    .btn-primary:hover:not(:disabled) { background: var(--accent-hov); }
+    .btn-ghost {
+      background: transparent; border: none;
+      color: var(--text-mute); font-size: 0.87rem;
+      padding: 10px 12px; cursor: pointer; font-weight: 500;
+      transition: color 0.15s;
+    }
+    .btn-ghost:hover { color: var(--text); }
     .btn-outline {
-      background: transparent;
-      color: #1a3a6e;
-      border: 1.5px solid #1a3a6e;
+      background: transparent; color: var(--accent);
+      border: 1.5px solid var(--accent); border-radius: 5px;
     }
-    .btn-outline:hover:not(:disabled) { background: #eef3fb; }
-    .btn-row { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 8px; margin-bottom: 20px; }
+    .btn-outline:hover:not(:disabled) { background: #fdf5f7; }
 
     /* ── Errors ──────────────────────────────────────────────────────────── */
     .error-list {
-      display: none;
-      list-style: none;
-      background: #fef2f2;
-      border: 1px solid #fca5a5;
-      border-radius: 6px;
-      padding: 10px 14px;
-      margin-bottom: 16px;
-      color: #b91c1c;
-      font-size: 0.88rem;
+      display: none; list-style: none;
+      background: #fef2f2; border: 1px solid #fca5a5; border-radius: 5px;
+      padding: 10px 14px; margin-bottom: 20px; color: #b91c1c; font-size: 0.85rem;
     }
     .error-list li + li { margin-top: 4px; }
 
-    /* ── Warnings (amber) ────────────────────────────────────────────────── */
+    /* ── Warnings ────────────────────────────────────────────────────────── */
     .warning-list {
-      display: none;
-      list-style: none;
-      background: #fffbeb;
-      border: 1px solid #fbbf24;
-      border-radius: 6px;
-      padding: 10px 14px;
-      margin-bottom: 16px;
-      color: #92400e;
-      font-size: 0.88rem;
+      display: none; list-style: none;
+      background: #fffbeb; border: 1px solid #fbbf24; border-radius: 5px;
+      padding: 10px 14px; margin-bottom: 16px; color: #92400e; font-size: 0.85rem;
     }
     .warning-list li + li { margin-top: 4px; }
 
-    /* ── Result (single patient) ─────────────────────────────────────────── */
-    #result-container { margin-top: 8px; }
-    .result-card {
-      display: flex;
-      align-items: center;
-      gap: 20px;
-      background: #f8fafc;
-      border: 1px solid #d1d8e0;
-      border-radius: 8px;
-      padding: 18px 24px;
+    /* ── Result ──────────────────────────────────────────────────────────── */
+    #result-container { margin-top: 6px; }
+    .result-section {
+      border-top: 1px solid var(--border);
+      padding-top: 22px; margin-top: 4px;
+      animation: resultIn 0.3s ease;
     }
-    .result-badge {
-      font-size: 1.7rem;
-      font-weight: 800;
-      padding: 10px 22px;
-      border-radius: 8px;
-      letter-spacing: 0.04em;
-      min-width: 80px;
-      text-align: center;
+    @keyframes resultIn {
+      from { opacity: 0; transform: translateY(6px); }
+      to   { opacity: 1; transform: translateY(0); }
     }
-    .result-score {
-      font-size: 1rem;
-      color: #444;
-      line-height: 1.6;
+    .result-class-name {
+      font-family: Georgia, "Times New Roman", serif;
+      font-size: 2rem; font-weight: normal;
+      letter-spacing: -0.02em; line-height: 1;
+      margin-bottom: 5px;
     }
-    .result-score strong { font-size: 1.2rem; color: #1a1a2e; }
+    .result-meta {
+      font-size: 0.85rem; color: var(--text-mute);
+      margin-bottom: 20px; font-variant-numeric: tabular-nums;
+    }
+    .result-meta strong { color: var(--text-mid); }
 
-    /* ── Karyotype hint ──────────────────────────────────────────────────── */
-    .karyo-hint {
-      font-size: 0.79rem;
-      color: #555;
-      background: #f4f6f8;
-      border-left: 3px solid #9ab3d8;
-      padding: 7px 10px;
-      border-radius: 0 4px 4px 0;
-      margin-top: 6px;
-      line-height: 1.6;
+    /* Risk rail */
+    .risk-rail {
+      position: relative; display: flex;
+      align-items: center; justify-content: space-between;
+      padding: 0 9px; height: 32px; margin-bottom: 4px;
     }
-
-    /* ── Batch section ───────────────────────────────────────────────────── */
-    .batch-upload-area {
-      border: 2px dashed #9ab3d8;
-      border-radius: 8px;
-      padding: 22px;
-      text-align: center;
-      background: #f8fafc;
-      cursor: pointer;
-      transition: background 0.15s, border-color 0.15s;
+    .risk-rail-track {
+      position: absolute; left: 9px; right: 9px;
+      top: 50%; transform: translateY(-50%);
+      height: 2px; background: var(--border);
     }
-    .batch-upload-area:hover { background: #eef3fb; border-color: #1a3a6e; }
-    .batch-upload-area input { display: none; }
-    .upload-icon { font-size: 2rem; margin-bottom: 6px; }
-    .upload-label {
-      font-size: 0.92rem; color: #555; margin-bottom: 4px;
+    .rail-stop {
+      position: relative; z-index: 1;
+      display: flex; align-items: center; justify-content: center;
+      flex: 1;
     }
-    .upload-label strong { color: #1a3a6e; cursor: pointer; }
-    .upload-hint { font-size: 0.8rem; color: #888; }
-
-    /* ── Results table ───────────────────────────────────────────────────── */
-    .results-table {
-      width: 100%;
-      border-collapse: collapse;
-      font-size: 0.9rem;
-      margin-top: 4px;
+    .rail-dot {
+      width: 12px; height: 12px; border-radius: 50%;
+      background: var(--bg); border: 2px solid var(--border-in);
+      transition: all 0.25s;
     }
-    .results-table th {
-      background: #1a3a6e;
-      color: #fff;
-      padding: 9px 14px;
-      text-align: left;
-      font-weight: 600;
-      font-size: 0.83rem;
-      text-transform: uppercase;
-      letter-spacing: 0.05em;
+    .rail-stop.active .rail-dot {
+      width: 20px; height: 20px; border: none;
     }
-    .results-table td {
-      padding: 8px 14px;
-      border-bottom: 1px solid #e8ecf0;
+    .rail-labels {
+      display: flex; justify-content: space-between; padding: 0 4px;
     }
-    .results-table tr:last-child td { border-bottom: none; }
-    .results-table tr:hover td { background: #f4f8ff; }
-    .badge {
-      display: inline-block;
-      padding: 2px 9px;
-      border-radius: 4px;
-      font-size: 0.83rem;
-      font-weight: 700;
-      letter-spacing: 0.03em;
+    .rail-lbl {
+      flex: 1; text-align: center;
+      font-size: 0.70rem; font-weight: 500;
+      color: var(--text-mute); letter-spacing: 0.04em;
     }
-    .empty-msg, .loading-msg {
-      color: #888; font-style: italic; text-align: center;
-      padding: 20px 0;
-    }
+    .rail-lbl.active { font-weight: 700; }
 
     /* ── Info note ───────────────────────────────────────────────────────── */
     .info-note {
-      font-size: 0.82rem;
-      color: #666;
-      background: #f8f9fa;
-      border-left: 3px solid #9ab3d8;
-      padding: 8px 12px;
-      border-radius: 0 4px 4px 0;
-      margin-top: 12px;
+      font-size: 0.79rem; color: var(--text-mute); line-height: 1.65;
+      border-top: 1px solid var(--border); padding-top: 14px; margin-top: 18px;
+    }
+    .info-note strong { color: var(--text-mid); }
+
+    /* ── Reference ───────────────────────────────────────────────────────── */
+    .reference-note {
+      font-size: 0.77rem; color: var(--text-mute); font-style: italic;
+      border-top: 1px solid var(--border); padding-top: 14px; margin-top: 40px;
     }
 
-    /* ── Reference note ──────────────────────────────────────────────────── */
-    .reference-note {
-      font-size: 0.80rem;
-      color: #777;
-      border-top: 1px solid #d8dde6;
-      padding-top: 16px;
-      margin-top: 32px;
+    /* ── Batch ───────────────────────────────────────────────────────────── */
+    .batch-step { margin-bottom: 28px; }
+    .batch-upload-area {
+      border: 1.5px dashed var(--border-in);
+      border-radius: 6px; padding: 28px; text-align: center;
+      background: var(--bg-input); cursor: pointer; transition: all 0.15s;
+    }
+    .batch-upload-area:hover { border-color: var(--accent); background: #fdf5f7; }
+    .batch-upload-area input { display: none; }
+    .upload-icon { font-size: 1.5rem; margin-bottom: 8px; opacity: 0.5; }
+    .upload-label { font-size: 0.88rem; color: var(--text-mid); margin-bottom: 3px; }
+    .upload-label strong { color: var(--accent); cursor: pointer; }
+    .upload-hint { font-size: 0.76rem; color: var(--text-mute); }
+    .results-table { width: 100%; border-collapse: collapse; font-size: 0.88rem; }
+    .results-table th {
+      background: var(--text); color: #fff; padding: 8px 14px;
+      text-align: left; font-size: 0.74rem;
+      text-transform: uppercase; letter-spacing: 0.08em; font-weight: 600;
+    }
+    .results-table td { padding: 8px 14px; border-bottom: 1px solid var(--border); }
+    .results-table tr:last-child td { border-bottom: none; }
+    .results-table tr:hover td { background: #fdf5f7; }
+    .badge {
+      display: inline-block; padding: 2px 8px;
+      border-radius: 3px; font-size: 0.78rem; font-weight: 700; letter-spacing: 0.04em;
+    }
+    .empty-msg, .loading-msg {
+      color: var(--text-mute); font-style: italic;
+      text-align: center; padding: 24px 0; font-size: 0.88rem;
+    }
+    .info-note-batch {
+      font-size: 0.78rem; color: var(--text-mute); line-height: 1.65; margin-top: 12px;
+    }
+    .info-note-batch code {
+      font-family: "SF Mono", Consolas, monospace; font-size: 0.77rem;
+      color: var(--text-mid); background: rgba(0,0,0,0.05);
+      padding: 1px 4px; border-radius: 3px;
     }
 
     /* ── Responsive ──────────────────────────────────────────────────────── */
-    @media (max-width: 600px) {
-      header { padding: 14px 16px; flex-direction: column; gap: 4px; }
-      .form-grid { grid-template-columns: 1fr 1fr; }
+    @media (max-width: 640px) {
+      header { padding: 14px 16px; }
+      .header-inner { flex-wrap: wrap; gap: 4px; }
+      main { padding: 20px 16px 60px; }
+      .form-grid-4 { grid-template-columns: 1fr 1fr; }
     }
   </style>
 </head>
 <body>
 
 <header>
-  <h1>iCPSS Risk Score Calculator</h1>
-  <p>Chronic Myelomonocytic Leukemia (CMML)</p>
+  <div class="header-inner">
+    <div class="site-name"><strong>iCPSS</strong> Risk Score Calculator</div>
+    <span class="site-sub">Chronic Myelomonocytic Leukemia</span>
+  </div>
 </header>
 
 <main>
   <!-- Tabs -->
   <div class="tab-bar" role="tablist">
-    <button class="tab-btn active" data-tab="single" role="tab" aria-selected="true">
-      Single Patient
-    </button>
-    <button class="tab-btn" data-tab="batch" role="tab" aria-selected="false">
-      Batch Mode
-    </button>
+    <button class="tab-btn active" data-tab="single" role="tab" aria-selected="true">Single Patient</button>
+    <button class="tab-btn" data-tab="batch" role="tab" aria-selected="false">Batch Mode</button>
   </div>
 
   <!-- ── Single Patient Panel ─────────────────────────────────────────────── -->
@@ -395,21 +417,10 @@
 
     <form id="single-form" novalidate>
 
-      <!-- Patient ID -->
-      <div class="card">
-        <div class="card-title">Patient Information</div>
-        <div class="form-grid">
-          <div class="form-group" style="grid-column: 1 / -1; max-width: 280px;">
-            <label for="patient-id">Patient ID <span class="unit">(optional)</span></label>
-            <input type="text" id="patient-id" placeholder="e.g. PT-001">
-          </div>
-        </div>
-      </div>
-
-      <!-- Clinical parameters -->
-      <div class="card">
-        <div class="card-title">Clinical Parameters</div>
-        <div class="form-grid">
+      <!-- Clinical Parameters -->
+      <div class="form-section">
+        <div class="section-title">Clinical Parameters</div>
+        <div class="form-grid-4">
           <div class="form-group">
             <label for="wbc">WBC <span class="unit">(×10⁹/L)</span></label>
             <input type="number" id="wbc" placeholder="e.g. 12.5" min="0.1" max="500" step="0.1">
@@ -423,159 +434,170 @@
             <input type="number" id="plt" placeholder="e.g. 120" min="1" max="1500" step="1">
           </div>
           <div class="form-group">
-            <label for="blasts">Bone Marrow Blast Count <span class="unit">(%)</span></label>
+            <label for="blasts">BM Blast Count <span class="unit">(%)</span></label>
             <input type="number" id="blasts" placeholder="e.g. 4" min="0" max="19" step="1">
           </div>
-          <div class="form-group" style="grid-column: 1 / -1;">
-            <label for="karyo">Cytogenetic Risk according to CPSS</label>
-            <select id="karyo">
-              <option value="">— select —</option>
-              <option value="0">0 — Low (Normal or −Y)</option>
-              <option value="1">1 — Intermediate (other abnormalities)</option>
-              <option value="2">2 — High (Complex karyotype, +8, or chr. 7 abnormalities)</option>
-            </select>
-            <div class="karyo-hint">
-              <strong>Low:</strong> normal karyotype or loss of Y chromosome<br>
-              <strong>Intermediate:</strong> any other single abnormality<br>
-              <strong>High:</strong> complex karyotype (≥3 abnormalities), trisomy 8, or abnormalities of chromosome 7
-            </div>
-          </div>
+        </div>
+
+        <div class="subsection-label">Cytogenetic Risk according to CPSS</div>
+        <div class="karyo-pills">
+          <span class="karyo-pill">
+            <input type="radio" name="karyo" id="karyo-0" value="0">
+            <label for="karyo-0">Low</label>
+          </span>
+          <span class="karyo-pill">
+            <input type="radio" name="karyo" id="karyo-1" value="1">
+            <label for="karyo-1">Intermediate</label>
+          </span>
+          <span class="karyo-pill">
+            <input type="radio" name="karyo" id="karyo-2" value="2">
+            <label for="karyo-2">High</label>
+          </span>
+        </div>
+        <div class="karyo-hint-text">
+          <strong>Low:</strong> normal karyotype or −Y &ensp;·&ensp;
+          <strong>Intermediate:</strong> any other single abnormality &ensp;·&ensp;
+          <strong>High:</strong> complex karyotype (≥3 abnormalities), trisomy 8, or chr. 7 abnormalities
         </div>
       </div>
 
-      <!-- Mutations -->
-      <div class="card">
-        <div class="card-title">Somatic Mutations</div>
-        <p style="font-size:0.84rem;color:#666;margin-bottom:12px;">
-          Check all mutations present (leave unchecked = wild-type / not detected).
-        </p>
+      <!-- Somatic Mutations -->
+      <div class="form-section">
+        <div class="section-title">Somatic Mutations</div>
+        <p class="mutation-subtext">Mark all that are present. Untested genes are treated as wild-type.</p>
         <div class="mutation-grid">
-          <label><input type="checkbox" id="ASXL1">  ASXL1</label>
-          <label><input type="checkbox" id="DNMT3A"> DNMT3A</label>
-          <label><input type="checkbox" id="EZH2">   EZH2</label>
-          <label><input type="checkbox" id="RUNX1">  RUNX1</label>
-          <label><input type="checkbox" id="SETBP1"> SETBP1</label>
-          <label><input type="checkbox" id="STAG2">  STAG2</label>
-          <label><input type="checkbox" id="TET2">   TET2</label>
-          <label><input type="checkbox" id="TP53">   TP53</label>
-          <label><input type="checkbox" id="U2AF1">  U2AF1</label>
+          <span class="mut-chip"><input type="checkbox" id="ASXL1"><label for="ASXL1">ASXL1</label></span>
+          <span class="mut-chip"><input type="checkbox" id="DNMT3A"><label for="DNMT3A">DNMT3A</label></span>
+          <span class="mut-chip"><input type="checkbox" id="EZH2"><label for="EZH2">EZH2</label></span>
+          <span class="mut-chip"><input type="checkbox" id="RUNX1"><label for="RUNX1">RUNX1</label></span>
+          <span class="mut-chip"><input type="checkbox" id="SETBP1"><label for="SETBP1">SETBP1</label></span>
+          <span class="mut-chip"><input type="checkbox" id="STAG2"><label for="STAG2">STAG2</label></span>
+          <span class="mut-chip"><input type="checkbox" id="TET2"><label for="TET2">TET2</label></span>
+          <span class="mut-chip"><input type="checkbox" id="TP53"><label for="TP53">TP53</label></span>
+          <span class="mut-chip"><input type="checkbox" id="U2AF1"><label for="U2AF1">U2AF1</label></span>
         </div>
       </div>
 
       <!-- Demographics toggle (de-emphasized, default OFF) -->
-      <div class="demo-row-secondary">
-        <label class="toggle-switch">
-          <input type="checkbox" id="demo-toggle">
-          <span class="toggle-slider"></span>
-        </label>
-        <div class="demo-label-wrap">
-          <label class="demo-main-label" for="demo-toggle">
-            Include age &amp; sex adjustment
-            <em>(not recommended for routine use — see note below)</em>
+      <div class="form-section" style="margin-bottom:16px;">
+        <div class="demo-row-secondary">
+          <label class="toggle-switch">
+            <input type="checkbox" id="demo-toggle">
+            <span class="toggle-slider"></span>
           </label>
-          <span class="demo-sub-note">
-            Demographics-adjusted scoring is only validated for patients aged 65–90.
-            For most clinical purposes, the unadjusted score is preferred.
-          </span>
-        </div>
-      </div>
-
-      <!-- Demographics card (hidden by default) -->
-      <div class="card" id="demo-section">
-        <div class="card-title">Demographics</div>
-        <div class="form-grid">
-          <div class="form-group">
-            <label>Sex</label>
-            <div class="radio-group">
-              <label><input type="radio" name="sex" value="1"> Male</label>
-              <label><input type="radio" name="sex" value="0"> Female</label>
-            </div>
+          <div class="demo-label-wrap">
+            <label class="demo-main-label" for="demo-toggle">
+              Include age &amp; sex adjustment
+              <em>(not recommended for routine use)</em>
+            </label>
+            <span class="demo-sub-note">
+              Only validated for patients aged 65–90. Unadjusted score preferred for most clinical uses.
+            </span>
           </div>
-          <div class="form-group">
-            <label for="age">Age <span class="unit">(years)</span></label>
-            <input type="number" id="age" placeholder="e.g. 72" min="65" max="90" step="1">
+        </div>
+
+        <!-- Demographics fields (hidden by default) -->
+        <div id="demo-section" style="display:none; margin-top:14px;">
+          <div class="section-title" style="font-size:0.68rem; margin-bottom:12px;">Demographics</div>
+          <div style="display:flex; gap:28px; align-items:flex-start; flex-wrap:wrap;">
+            <div class="form-group">
+              <label style="font-size:0.76rem; font-weight:600; color:var(--text-mid); margin-bottom:8px; display:block;">Sex</label>
+              <div class="sex-pills">
+                <span class="sex-pill">
+                  <input type="radio" name="sex" id="sex-male" value="1">
+                  <label for="sex-male">Male</label>
+                </span>
+                <span class="sex-pill">
+                  <input type="radio" name="sex" id="sex-female" value="0">
+                  <label for="sex-female">Female</label>
+                </span>
+              </div>
+            </div>
+            <div class="form-group">
+              <label for="age" style="font-size:0.76rem; font-weight:600; color:var(--text-mid);">
+                Age <span class="unit">(years, 65–90)</span>
+              </label>
+              <input type="number" id="age" placeholder="e.g. 72" min="65" max="90" step="1" style="max-width:120px;">
+            </div>
           </div>
         </div>
       </div>
 
       <div class="btn-row">
         <button type="button" id="btn-compute" class="btn btn-primary">Compute Score</button>
-        <button type="button" id="btn-clear"   class="btn btn-outline">Clear</button>
+        <button type="button" id="btn-clear" class="btn-ghost">Clear</button>
       </div>
     </form>
 
     <ul class="warning-list" id="single-warnings"></ul>
 
-    <!-- Result -->
     <div id="result-container"></div>
 
     <div class="info-note">
-      <strong>Required:</strong> CBC (WBC, Hemoglobin, Platelets), Bone Marrow Blast Count, and Cytogenetic Risk.<br>
-      Somatic mutations are optional; untested genes are treated as wild-type (imputed to training mean).
+      <strong>Required:</strong> CBC (WBC, Hemoglobin, Platelets), BM Blast Count, and Cytogenetic Risk.<br>
+      Somatic mutations are optional; untested genes are imputed to training-set mean.
     </div>
+
   </div><!-- /panel-single -->
 
   <!-- ── Batch Panel ───────────────────────────────────────────────────────── -->
   <div id="panel-batch" class="tab-panel" role="tabpanel">
 
-    <!-- Step 1: template -->
-    <div class="card">
-      <div class="card-title">Step 1 — Download Template</div>
-      <p style="font-size:0.88rem;color:#555;margin-bottom:14px;">
-        Download the Excel template, fill in your patient data, then upload below.
+    <!-- Step 1 -->
+    <div class="batch-step">
+      <div class="section-title">Step 1 — Download Template</div>
+      <p style="font-size:0.86rem; color:var(--text-mid); margin-bottom:14px;">
+        Download the Excel template, fill in patient data, then upload below.
       </p>
-      <button type="button" id="btn-template" class="btn btn-outline">
-        &#8659; Download Template (.xlsx)
-      </button>
-      <div class="info-note" style="margin-top:14px;">
+      <button type="button" id="btn-template" class="btn btn-outline">&#8659; Download Template (.xlsx)</button>
+      <div class="info-note-batch" style="margin-top:14px;">
         <strong>Required columns:</strong>
-        <code>wbc_cont</code>, <code>hb_cont</code>, <code>plt_cont</code>,
-        <code>blast_cont</code>, <code>cpss_karyo</code> (0=Low, 1=Intermediate, 2=High),
-        mutation columns (0/1): <code>ASXL1, DNMT3A, EZH2, RUNX1, SETBP1, STAG2, TET2, TP53, U2AF1</code>.
-        An optional <code>id</code> column can be used to label patients.
-        <code>sex</code> (1=Male, 0=Female) and <code>age</code> are only needed when using demographics adjustment.
+        <code>wbc_cont</code>, <code>hb_cont</code>, <code>plt_cont</code>, <code>blast_cont</code>,
+        <code>cpss_karyo</code> (0=Low, 1=Intermediate, 2=High),
+        mutations (0/1): <code>ASXL1</code> <code>DNMT3A</code> <code>EZH2</code> <code>RUNX1</code>
+        <code>SETBP1</code> <code>STAG2</code> <code>TET2</code> <code>TP53</code> <code>U2AF1</code>.
+        Optional <code>id</code> column for labeling.
+        <code>sex</code> and <code>age</code> only needed when using demographics adjustment.
         Missing numerical values are imputed with their training-set mean.
       </div>
     </div>
 
-    <!-- Step 2: upload -->
-    <div class="card">
-      <div class="card-title">Step 2 — Upload &amp; Compute</div>
+    <!-- Step 2 -->
+    <div class="batch-step">
+      <div class="section-title">Step 2 — Upload &amp; Compute</div>
       <ul class="error-list" id="batch-errors"></ul>
-
       <label class="batch-upload-area" for="batch-file">
         <div class="upload-icon">&#128190;</div>
-        <div class="upload-label">
-          <strong>Click to choose file</strong> or drag and drop
-        </div>
+        <div class="upload-label"><strong>Click to choose file</strong> or drag and drop</div>
         <div class="upload-hint">.xlsx files only</div>
         <input type="file" id="batch-file" accept=".xlsx">
       </label>
-
-      <p id="batch-filename" style="font-size:0.84rem;color:#555;margin-top:8px;"></p>
+      <p id="batch-filename" style="font-size:0.82rem; color:var(--text-mute); margin-top:8px;"></p>
     </div>
 
-    <!-- Demographics toggle for batch (de-emphasized, default OFF) -->
-    <div class="demo-row-secondary">
-      <label class="toggle-switch">
-        <input type="checkbox" id="batch-demo-toggle">
-        <span class="toggle-slider"></span>
-      </label>
-      <div class="demo-label-wrap">
-        <label class="demo-main-label" for="batch-demo-toggle">
-          Include age &amp; sex adjustment
-          <em>(not recommended for routine use)</em>
+    <!-- Demographics (batch, de-emphasized, default OFF) -->
+    <div style="margin-bottom:24px;">
+      <div class="demo-row-secondary">
+        <label class="toggle-switch">
+          <input type="checkbox" id="batch-demo-toggle">
+          <span class="toggle-slider"></span>
         </label>
-        <span class="demo-sub-note">
-          Requires <code>sex</code> and <code>age</code> columns in the uploaded file.
-          Only validated for patients aged 65–90.
-        </span>
+        <div class="demo-label-wrap">
+          <label class="demo-main-label" for="batch-demo-toggle">
+            Include age &amp; sex adjustment <em>(not recommended for routine use)</em>
+          </label>
+          <span class="demo-sub-note">
+            Requires <code style="font-size:0.73rem; background:rgba(0,0,0,0.06); padding:1px 4px; border-radius:2px;">sex</code>
+            and <code style="font-size:0.73rem; background:rgba(0,0,0,0.06); padding:1px 4px; border-radius:2px;">age</code>
+            columns. Only validated for ages 65–90.
+          </span>
+        </div>
       </div>
     </div>
 
     <!-- Results -->
-    <div class="card">
-      <div class="card-title">Results</div>
+    <div class="batch-step">
+      <div class="section-title">Results</div>
       <div id="batch-results"><p class="empty-msg">Upload a file to see results.</p></div>
       <div class="btn-row">
         <button type="button" id="btn-download-results" class="btn btn-primary" disabled>
@@ -595,15 +617,13 @@
 <script src="js/xlsx.full.min.js"></script>
 <script src="js/icpss.js"></script>
 <script>
-  // ── Extra UI wiring not in icpss.js ────────────────────────────────────────
+  // ── Extra UI wiring ─────────────────────────────────────────────────────────
 
-  // Show/hide demo section based on toggle
   const demoToggle  = document.getElementById('demo-toggle');
   const demoSection = document.getElementById('demo-section');
 
   function updateDemoSection() {
     demoSection.style.display = demoToggle.checked ? 'block' : 'none';
-    // Clear sex/age if hidden
     if (!demoToggle.checked) {
       document.querySelectorAll('input[name="sex"]').forEach(r => r.checked = false);
       document.getElementById('age').value = '';
@@ -612,30 +632,28 @@
   demoToggle.addEventListener('change', updateDemoSection);
   updateDemoSection();
 
-  // Show file name after selection
+  // File name display
   const batchFile     = document.getElementById('batch-file');
   const batchFilename = document.getElementById('batch-filename');
   batchFile.addEventListener('change', () => {
     batchFilename.textContent = batchFile.files.length > 0
-      ? 'Selected: ' + batchFile.files[0].name
-      : '';
+      ? 'Selected: ' + batchFile.files[0].name : '';
   });
 
-  // Drag-and-drop support for the upload area
+  // Drag-and-drop
   const uploadArea = document.querySelector('.batch-upload-area');
   uploadArea.addEventListener('dragover', e => {
     e.preventDefault();
-    uploadArea.style.background = '#dceeff';
+    uploadArea.style.borderColor = 'var(--accent)';
   });
   uploadArea.addEventListener('dragleave', () => {
-    uploadArea.style.background = '';
+    uploadArea.style.borderColor = '';
   });
   uploadArea.addEventListener('drop', e => {
     e.preventDefault();
-    uploadArea.style.background = '';
+    uploadArea.style.borderColor = '';
     const files = e.dataTransfer.files;
     if (files.length > 0 && files[0].name.endsWith('.xlsx')) {
-      // Programmatically set files on the input and trigger change
       const dt = new DataTransfer();
       dt.items.add(files[0]);
       batchFile.files = dt.files;
