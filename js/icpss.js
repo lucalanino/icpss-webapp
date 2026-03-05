@@ -60,6 +60,15 @@ const CLASS_COLORS = {
   VH: { bg: '#82071e', text: '#ffffff' }
 };
 
+// Full risk class names
+const CLASS_NAMES = {
+  VL: 'Very Low',
+  L:  'Low',
+  I:  'Intermediate',
+  H:  'High',
+  VH: 'Very High'
+};
+
 // ─── Encoding ─────────────────────────────────────────────────────────────────
 
 /**
@@ -284,12 +293,16 @@ function renderSingleResult(result) {
   }
   const { score, riskClass } = result;
   const col = CLASS_COLORS[riskClass] || { bg: '#888', text: '#fff' };
+  const fullName = CLASS_NAMES[riskClass] || riskClass;
   container.innerHTML = `
     <div class="result-card">
       <div class="result-badge" style="background:${col.bg};color:${col.text}">
         ${riskClass}
       </div>
-      <div class="result-score">Score: <strong>${score.toFixed(4)}</strong></div>
+      <div class="result-score">
+        <strong>${riskClass}</strong> — ${fullName}<br>
+        Score: <strong>${score.toFixed(4)}</strong>
+      </div>
     </div>`;
 }
 
@@ -348,12 +361,18 @@ document.addEventListener('DOMContentLoaded', () => {
   const demoToggle = document.getElementById('demo-toggle');
 
   singleBtn.addEventListener('click', () => {
-    clearErrors();
     const raw = readSingleForm();
-    const errs = validateSingleForm(raw, demoToggle.checked);
-    if (errs.length > 0) {
-      showErrors(errs, 'single-errors');
+    const { errors, warnings } = validateSingleForm(raw, demoToggle.checked);
+    if (errors.length > 0) {
+      showErrors(errors, 'single-errors');
+      clearWarnings('single-warnings');
       return;
+    }
+    clearErrors('single-errors');
+    if (warnings.length > 0) {
+      showWarnings(warnings, 'single-warnings');
+    } else {
+      clearWarnings('single-warnings');
     }
     const encoded = encodePatient(raw);
     const result  = computeScore(encoded, demoToggle.checked);
@@ -364,6 +383,7 @@ document.addEventListener('DOMContentLoaded', () => {
     singleForm.reset();
     renderSingleResult(null);
     clearErrors();
+    clearWarnings('single-warnings');
   });
 
   // ── Batch: template download ──────────────────────────────────────────────
@@ -449,39 +469,69 @@ function readSingleForm() {
 }
 
 function validateSingleForm(raw, includeDemographics) {
-  const errs = [];
+  const errors = [];
+  const warnings = [];
 
-  if (includeDemographics) {
-    if (raw.sex === null || raw.sex === undefined) errs.push('Sex is required when demographics are included.');
-    if (raw.age === '' || raw.age === null || isNaN(Number(raw.age))) {
-      errs.push('Age is required and must be a number.');
-    } else if (Number(raw.age) < 0 || Number(raw.age) > 120) {
-      errs.push('Age must be between 0 and 120.');
-    }
-  }
-
-  const numFields = [
-    { val: raw.wbc_cont,   label: 'WBC',        min: 0,   max: 500  },
-    { val: raw.hb_cont,    label: 'Hemoglobin',  min: 0,   max: 25   },
-    { val: raw.plt_cont,   label: 'Platelets',   min: 0,   max: 3000 },
-    { val: raw.blast_cont, label: 'BM Blasts',   min: 0,   max: 100  },
+  // Required clinical fields
+  const clinicalRequired = [
+    { val: raw.wbc_cont,   label: 'WBC'                     },
+    { val: raw.hb_cont,    label: 'Hemoglobin'              },
+    { val: raw.plt_cont,   label: 'Platelets'               },
+    { val: raw.blast_cont, label: 'Bone Marrow Blast Count' },
   ];
-  for (const f of numFields) {
-    if (f.val !== '' && f.val !== null && f.val !== undefined) {
-      const n = Number(f.val);
-      if (isNaN(n)) {
-        errs.push(`${f.label} must be a number.`);
-      } else if (n < f.min || n > f.max) {
-        errs.push(`${f.label} must be between ${f.min} and ${f.max}.`);
-      }
+  for (const f of clinicalRequired) {
+    if (f.val === '' || f.val === null || f.val === undefined) {
+      errors.push(`${f.label} is required.`);
     }
   }
 
   if (raw.cpss_karyo === null || raw.cpss_karyo === '' || raw.cpss_karyo === undefined) {
-    errs.push('CPSS Karyotype is required.');
+    errors.push('Cytogenetic Risk (CPSS) is required.');
   }
 
-  return errs;
+  // Range + type validation (only for non-empty values)
+  const rangeFields = [
+    { val: raw.wbc_cont,   label: 'WBC',                     min: 0.1, max: 500,  isInt: false, warnAbove: 100 },
+    { val: raw.hb_cont,    label: 'Hemoglobin',              min: 5,   max: 20,   isInt: false, warnAbove: 15  },
+    { val: raw.plt_cont,   label: 'Platelets',               min: 1,   max: 1500, isInt: true,  warnAbove: null },
+    { val: raw.blast_cont, label: 'Bone Marrow Blast Count', min: 0,   max: 19,   isInt: true,  warnAbove: null },
+  ];
+  for (const f of rangeFields) {
+    if (f.val === '' || f.val === null || f.val === undefined) continue;
+    const n = Number(f.val);
+    if (isNaN(n)) {
+      errors.push(`${f.label} must be a number.`);
+      continue;
+    }
+    if (n < f.min || n > f.max) {
+      errors.push(`${f.label} must be between ${f.min} and ${f.max}.`);
+      continue;
+    }
+    if (f.isInt && !Number.isInteger(n)) {
+      errors.push(`${f.label} must be a whole number.`);
+      continue;
+    }
+    if (f.warnAbove !== null && n > f.warnAbove) {
+      warnings.push(`${f.label} value (${n}) is unusually high — please verify.`);
+    }
+  }
+
+  // Demographics validation (when toggle ON)
+  if (includeDemographics) {
+    if (raw.sex === null || raw.sex === undefined) {
+      errors.push('Sex is required when demographics adjustment is enabled.');
+    }
+    if (raw.age === '' || raw.age === null || isNaN(Number(raw.age))) {
+      errors.push('Age is required when demographics adjustment is enabled.');
+    } else {
+      const age = Number(raw.age);
+      if (age < 65 || age > 90) {
+        errors.push('Age must be between 65 and 90 for demographics-adjusted scoring.');
+      }
+    }
+  }
+
+  return { errors, warnings };
 }
 
 function showErrors(errs, containerId) {
@@ -502,4 +552,16 @@ function clearErrors(containerId) {
       el.style.display = 'none';
     });
   }
+}
+
+function showWarnings(warns, containerId) {
+  const el = document.getElementById(containerId);
+  if (!el) return;
+  el.innerHTML = warns.map(w => `<li>${escHtml(w)}</li>`).join('');
+  el.style.display = 'block';
+}
+
+function clearWarnings(containerId) {
+  const el = document.getElementById(containerId);
+  if (el) { el.innerHTML = ''; el.style.display = 'none'; }
 }

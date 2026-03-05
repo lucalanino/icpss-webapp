@@ -79,23 +79,40 @@
       border-bottom: 1px solid #e8ecf0;
     }
 
-    /* ── Toggle (demographics) ───────────────────────────────────────────── */
-    .demo-row {
+    /* ── Toggle (demographics — de-emphasized) ───────────────────────────── */
+    .demo-row-secondary {
       display: flex;
-      align-items: center;
+      align-items: flex-start;
       gap: 10px;
-      background: #eef3fb;
-      border: 1px solid #c5d6f0;
+      background: #f9fafb;
+      border: 1px solid #e2e6ea;
       border-radius: 6px;
       padding: 10px 16px;
-      margin-bottom: 20px;
+      margin-bottom: 12px;
     }
-    .demo-row label { font-weight: 500; cursor: pointer; }
+    .demo-label-wrap {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+    .demo-main-label {
+      font-size: 0.88rem;
+      font-weight: 500;
+      color: #555;
+      cursor: pointer;
+    }
+    .demo-sub-note {
+      font-size: 0.78rem;
+      color: #888;
+    }
+
     .toggle-switch {
       position: relative;
       display: inline-block;
       width: 40px;
       height: 22px;
+      flex-shrink: 0;
+      margin-top: 1px;
     }
     .toggle-switch input { opacity: 0; width: 0; height: 0; }
     .toggle-slider {
@@ -202,7 +219,7 @@
       border: 1.5px solid #1a3a6e;
     }
     .btn-outline:hover:not(:disabled) { background: #eef3fb; }
-    .btn-row { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 20px; }
+    .btn-row { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 8px; margin-bottom: 20px; }
 
     /* ── Errors ──────────────────────────────────────────────────────────── */
     .error-list {
@@ -218,8 +235,22 @@
     }
     .error-list li + li { margin-top: 4px; }
 
+    /* ── Warnings (amber) ────────────────────────────────────────────────── */
+    .warning-list {
+      display: none;
+      list-style: none;
+      background: #fffbeb;
+      border: 1px solid #fbbf24;
+      border-radius: 6px;
+      padding: 10px 14px;
+      margin-bottom: 16px;
+      color: #92400e;
+      font-size: 0.88rem;
+    }
+    .warning-list li + li { margin-top: 4px; }
+
     /* ── Result (single patient) ─────────────────────────────────────────── */
-    #result-container { margin-top: 22px; }
+    #result-container { margin-top: 8px; }
     .result-card {
       display: flex;
       align-items: center;
@@ -241,8 +272,21 @@
     .result-score {
       font-size: 1rem;
       color: #444;
+      line-height: 1.6;
     }
     .result-score strong { font-size: 1.2rem; color: #1a1a2e; }
+
+    /* ── Karyotype hint ──────────────────────────────────────────────────── */
+    .karyo-hint {
+      font-size: 0.79rem;
+      color: #555;
+      background: #f4f6f8;
+      border-left: 3px solid #9ab3d8;
+      padding: 7px 10px;
+      border-radius: 0 4px 4px 0;
+      margin-top: 6px;
+      line-height: 1.6;
+    }
 
     /* ── Batch section ───────────────────────────────────────────────────── */
     .batch-upload-area {
@@ -310,6 +354,15 @@
       margin-top: 12px;
     }
 
+    /* ── Reference note ──────────────────────────────────────────────────── */
+    .reference-note {
+      font-size: 0.80rem;
+      color: #777;
+      border-top: 1px solid #d8dde6;
+      padding-top: 16px;
+      margin-top: 32px;
+    }
+
     /* ── Responsive ──────────────────────────────────────────────────────── */
     @media (max-width: 600px) {
       header { padding: 14px 16px; flex-direction: column; gap: 4px; }
@@ -338,15 +391,6 @@
   <!-- ── Single Patient Panel ─────────────────────────────────────────────── -->
   <div id="panel-single" class="tab-panel active" role="tabpanel">
 
-    <!-- Demographics toggle -->
-    <div class="demo-row">
-      <label class="toggle-switch">
-        <input type="checkbox" id="demo-toggle" checked>
-        <span class="toggle-slider"></span>
-      </label>
-      <label for="demo-toggle">Include age &amp; sex (demographics)</label>
-    </div>
-
     <ul class="error-list" id="single-errors"></ul>
 
     <form id="single-form" novalidate>
@@ -362,52 +406,39 @@
         </div>
       </div>
 
-      <!-- Demographics (collapsible section) -->
-      <div class="card" id="demo-section">
-        <div class="card-title">Demographics</div>
-        <div class="form-grid">
-          <div class="form-group">
-            <label>Sex</label>
-            <div class="radio-group">
-              <label><input type="radio" name="sex" value="1"> Male</label>
-              <label><input type="radio" name="sex" value="0"> Female</label>
-            </div>
-          </div>
-          <div class="form-group">
-            <label for="age">Age <span class="unit">(years)</span></label>
-            <input type="number" id="age" placeholder="e.g. 68" min="0" max="120" step="1">
-          </div>
-        </div>
-      </div>
-
       <!-- Clinical parameters -->
       <div class="card">
         <div class="card-title">Clinical Parameters</div>
         <div class="form-grid">
           <div class="form-group">
             <label for="wbc">WBC <span class="unit">(×10⁹/L)</span></label>
-            <input type="number" id="wbc" placeholder="e.g. 12.5" min="0" max="500" step="0.1">
+            <input type="number" id="wbc" placeholder="e.g. 12.5" min="0.1" max="500" step="0.1">
           </div>
           <div class="form-group">
             <label for="hb">Hemoglobin <span class="unit">(g/dL)</span></label>
-            <input type="number" id="hb" placeholder="e.g. 10.2" min="0" max="25" step="0.1">
+            <input type="number" id="hb" placeholder="e.g. 10.2" min="5" max="20" step="0.1">
           </div>
           <div class="form-group">
             <label for="plt">Platelets <span class="unit">(×10⁹/L)</span></label>
-            <input type="number" id="plt" placeholder="e.g. 120" min="0" max="3000" step="1">
+            <input type="number" id="plt" placeholder="e.g. 120" min="1" max="1500" step="1">
           </div>
           <div class="form-group">
-            <label for="blasts">BM Blasts <span class="unit">(%)</span></label>
-            <input type="number" id="blasts" placeholder="e.g. 5" min="0" max="100" step="0.1">
+            <label for="blasts">Bone Marrow Blast Count <span class="unit">(%)</span></label>
+            <input type="number" id="blasts" placeholder="e.g. 4" min="0" max="19" step="1">
           </div>
-          <div class="form-group">
-            <label for="karyo">CPSS Karyotype</label>
+          <div class="form-group" style="grid-column: 1 / -1;">
+            <label for="karyo">Cytogenetic Risk according to CPSS</label>
             <select id="karyo">
               <option value="">— select —</option>
-              <option value="0">0 — Normal / Low risk</option>
-              <option value="1">1 — Intermediate</option>
-              <option value="2">2 — Poor / Complex</option>
+              <option value="0">0 — Low (Normal or −Y)</option>
+              <option value="1">1 — Intermediate (other abnormalities)</option>
+              <option value="2">2 — High (Complex karyotype, +8, or chr. 7 abnormalities)</option>
             </select>
+            <div class="karyo-hint">
+              <strong>Low:</strong> normal karyotype or loss of Y chromosome<br>
+              <strong>Intermediate:</strong> any other single abnormality<br>
+              <strong>High:</strong> complex karyotype (≥3 abnormalities), trisomy 8, or abnormalities of chromosome 7
+            </div>
           </div>
         </div>
       </div>
@@ -431,32 +462,61 @@
         </div>
       </div>
 
+      <!-- Demographics toggle (de-emphasized, default OFF) -->
+      <div class="demo-row-secondary">
+        <label class="toggle-switch">
+          <input type="checkbox" id="demo-toggle">
+          <span class="toggle-slider"></span>
+        </label>
+        <div class="demo-label-wrap">
+          <label class="demo-main-label" for="demo-toggle">
+            Include age &amp; sex adjustment
+            <em>(not recommended for routine use — see note below)</em>
+          </label>
+          <span class="demo-sub-note">
+            Demographics-adjusted scoring is only validated for patients aged 65–90.
+            For most clinical purposes, the unadjusted score is preferred.
+          </span>
+        </div>
+      </div>
+
+      <!-- Demographics card (hidden by default) -->
+      <div class="card" id="demo-section">
+        <div class="card-title">Demographics</div>
+        <div class="form-grid">
+          <div class="form-group">
+            <label>Sex</label>
+            <div class="radio-group">
+              <label><input type="radio" name="sex" value="1"> Male</label>
+              <label><input type="radio" name="sex" value="0"> Female</label>
+            </div>
+          </div>
+          <div class="form-group">
+            <label for="age">Age <span class="unit">(years)</span></label>
+            <input type="number" id="age" placeholder="e.g. 72" min="65" max="90" step="1">
+          </div>
+        </div>
+      </div>
+
       <div class="btn-row">
         <button type="button" id="btn-compute" class="btn btn-primary">Compute Score</button>
         <button type="button" id="btn-clear"   class="btn btn-outline">Clear</button>
       </div>
     </form>
 
+    <ul class="warning-list" id="single-warnings"></ul>
+
     <!-- Result -->
     <div id="result-container"></div>
 
     <div class="info-note">
-      Missing numerical values are imputed with their training-set mean (i.e. standardized to 0).
-      Karyotype and demographics (when enabled) are required.
+      <strong>Required:</strong> CBC (WBC, Hemoglobin, Platelets), Bone Marrow Blast Count, and Cytogenetic Risk.<br>
+      Somatic mutations are optional; untested genes are treated as wild-type (imputed to training mean).
     </div>
   </div><!-- /panel-single -->
 
   <!-- ── Batch Panel ───────────────────────────────────────────────────────── -->
   <div id="panel-batch" class="tab-panel" role="tabpanel">
-
-    <!-- Demographics toggle -->
-    <div class="demo-row">
-      <label class="toggle-switch">
-        <input type="checkbox" id="batch-demo-toggle" checked>
-        <span class="toggle-slider"></span>
-      </label>
-      <label for="batch-demo-toggle">Include age &amp; sex (demographics)</label>
-    </div>
 
     <!-- Step 1: template -->
     <div class="card">
@@ -469,13 +529,12 @@
       </button>
       <div class="info-note" style="margin-top:14px;">
         <strong>Required columns:</strong>
-        <code>sex</code> (1=Male, 0=Female),
-        <code>age</code>, <code>wbc_cont</code>, <code>hb_cont</code>,
-        <code>plt_cont</code>, <code>blast_cont</code>,
-        <code>cpss_karyo</code> (0/1/2),
+        <code>wbc_cont</code>, <code>hb_cont</code>, <code>plt_cont</code>,
+        <code>blast_cont</code>, <code>cpss_karyo</code> (0=Low, 1=Intermediate, 2=High),
         mutation columns (0/1): <code>ASXL1, DNMT3A, EZH2, RUNX1, SETBP1, STAG2, TET2, TP53, U2AF1</code>.
         An optional <code>id</code> column can be used to label patients.
-        Missing numerical values are imputed with their mean.
+        <code>sex</code> (1=Male, 0=Female) and <code>age</code> are only needed when using demographics adjustment.
+        Missing numerical values are imputed with their training-set mean.
       </div>
     </div>
 
@@ -496,6 +555,24 @@
       <p id="batch-filename" style="font-size:0.84rem;color:#555;margin-top:8px;"></p>
     </div>
 
+    <!-- Demographics toggle for batch (de-emphasized, default OFF) -->
+    <div class="demo-row-secondary">
+      <label class="toggle-switch">
+        <input type="checkbox" id="batch-demo-toggle">
+        <span class="toggle-slider"></span>
+      </label>
+      <div class="demo-label-wrap">
+        <label class="demo-main-label" for="batch-demo-toggle">
+          Include age &amp; sex adjustment
+          <em>(not recommended for routine use)</em>
+        </label>
+        <span class="demo-sub-note">
+          Requires <code>sex</code> and <code>age</code> columns in the uploaded file.
+          Only validated for patients aged 65–90.
+        </span>
+      </div>
+    </div>
+
     <!-- Results -->
     <div class="card">
       <div class="card-title">Results</div>
@@ -508,6 +585,11 @@
     </div>
 
   </div><!-- /panel-batch -->
+
+  <!-- Reference -->
+  <div class="reference-note">
+    <strong>Reference:</strong> [Citation in press — reference to be added upon publication]
+  </div>
 </main>
 
 <script src="js/xlsx.full.min.js"></script>
