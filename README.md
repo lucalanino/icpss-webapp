@@ -1,6 +1,10 @@
 # iCPSS Risk Score Calculator
 
+<<<<<<< HEAD
 Client-side calculator for the **Integrated Clinical and Prognostic Scoring System (iCPSS)** risk score in Chronic Myelomonocytic Leukemia (CMML). Runs entirely in the browser — no data is uploaded or transmitted.
+=======
+Client-side calculator for the **International Clinical and Prognostic Scoring System (iCPSS)** risk score in Chronic Myelomonocytic Leukemia (CMML). Runs entirely in the browser — no data is uploaded or transmitted.
+>>>>>>> 6628b67 (Update README)
 
 ## Features
 
