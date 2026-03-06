@@ -1,6 +1,6 @@
 'use strict';
 
-// ─── Static model parameters (ported from R) ─────────────────────────────────
+// ─── Static model parameters ─────────────────────────────────
 // Feature order (28 features):
 // [age, wbc, hb, plt, blasts,
 //  sex1, sex0,
@@ -48,16 +48,30 @@ const COEFS = [
 // Indices of demographics features: age=0, sex1=5, sex0=6
 const DEMO_INDICES = [0, 5, 6];
 
+// Gene pairs: [_1 index, _0 index] in the 28-feature vector
+// prior p_mutated = MEANS[i1] for each gene
+const GENE_PAIRS = [
+  { name: 'ASXL1',  i1: 7,  i0: 8  },
+  { name: 'DNMT3A', i1: 9,  i0: 10 },
+  { name: 'EZH2',   i1: 11, i0: 12 },
+  { name: 'RUNX1',  i1: 13, i0: 14 },
+  { name: 'SETBP1', i1: 15, i0: 16 },
+  { name: 'STAG2',  i1: 17, i0: 18 },
+  { name: 'TET2',   i1: 19, i0: 20 },
+  { name: 'TP53',   i1: 21, i0: 22 },
+  { name: 'U2AF1',  i1: 23, i0: 24 },
+];
+
 const THRESHOLDS = [-0.5935335, 0.1467796, 0.5660161, 1.2584983];
 const CLASSES = ['VL', 'L', 'I', 'H', 'VH'];
 
 // Class color palette
 const CLASS_COLORS = {
-  VL: { bg: '#1a7f37', text: '#ffffff' },
-  L:  { bg: '#2da44e', text: '#ffffff' },
+  VL: { bg: '#2166ac', text: '#ffffff' },
+  L:  { bg: '#67a9cf', text: '#ffffff' },
   I:  { bg: '#f5a623', text: '#ffffff' },
-  H:  { bg: '#cf222e', text: '#ffffff' },
-  VH: { bg: '#82071e', text: '#ffffff' }
+  H:  { bg: '#d6604d', text: '#ffffff' },
+  VH: { bg: '#b2182b', text: '#ffffff' }
 };
 
 // Full risk class names
@@ -180,6 +194,101 @@ function assignClass(score) {
   return CLASSES[idx];
 }
 
+// Karyo one-hot indices in the 28-feature vector: [karyo2, karyo1, karyo0]
+const KARYO_INDICES = [25, 26, 27];
+
+// ─── Confidence estimation ────────────────────────────────────────────────────
+
+/**
+ * Compute a probabilistic confidence score for cases where gene mutation
+ * status or karyotype is unknown. Enumerates all combinations (2 states per
+ * missing binary gene, 3 states for missing ternary karyotype), weights each
+ * by training-set prior probabilities, and returns the probability that the
+ * true risk class equals the computed class (shift = 0).
+ *
+ * @param {number[]} encoded - 28-element array from encodePatient()
+ * @param {string}   baseClass - the class computed with NaN→0 imputation
+ * @param {boolean}  includeDemographics
+ * @returns {{ value: number, n: number }|null} null if all features known
+ */
+function computeConfidence(encoded, baseClass, includeDemographics) {
+  const missingGenes = GENE_PAIRS.filter(g => isNaN(encoded[g.i1]));
+  const karyoMissing = isNaN(encoded[KARYO_INDICES[0]]);
+
+  const nMissing = missingGenes.length + (karyoMissing ? 1 : 0);
+  if (nMissing === 0) return null;
+
+  const N       = missingGenes.length;
+  const baseIdx = CLASSES.indexOf(baseClass);
+
+  // Pre-compute active feature indices (handle demographics exclusion once)
+  const activeIdxs  = COEFS.map((_, i) => i).filter(i => includeDemographics || !DEMO_INDICES.includes(i));
+  const activeCoefs = activeIdxs.map(i => COEFS[i]);
+
+  // Baseline z-array: NaN → 0 (same imputation as computeScore)
+  const baseZ = encoded.map((v, i) => isNaN(v) ? 0 : (v - MEANS[i]) / SDS[i]);
+
+  // Karyo states to enumerate: 3 if missing, just [null] (no-op) if known
+  // State 0 → karyo=0 (Low):  karyo_0=1, karyo_1=0, karyo_2=0
+  // State 1 → karyo=1 (Int):  karyo_0=0, karyo_1=1, karyo_2=0
+  // State 2 → karyo=2 (High): karyo_0=0, karyo_1=0, karyo_2=1
+  const karyoStates = karyoMissing ? [0, 1, 2] : [null];
+
+  let pShift = 0;
+
+  for (const ks of karyoStates) {
+    let karyoWeight = 1;
+    // Pre-compute karyo z-values and weight for this state
+    const karyoZ = [null, null, null];
+    if (ks !== null) {
+      for (let j = 0; j < 3; j++) {
+        const idx      = KARYO_INDICES[j];
+        const karyoVal = 2 - j;              // idx 25→val 2, idx 26→val 1, idx 27→val 0
+        const rawVal   = (ks === karyoVal) ? 1 : 0;
+        karyoZ[j]      = (rawVal - MEANS[idx]) / SDS[idx];
+      }
+      // Prior probability: MEANS[25]=P(karyo=2), MEANS[26]=P(karyo=1), MEANS[27]=P(karyo=0)
+      karyoWeight = MEANS[KARYO_INDICES[2 - ks]];
+    }
+
+    for (let mask = 0; mask < (1 << N); mask++) {
+      const z    = baseZ.slice();
+      let weight = karyoWeight;
+
+      // Apply karyo z-values if missing
+      if (ks !== null) {
+        for (let j = 0; j < 3; j++) z[KARYO_INDICES[j]] = karyoZ[j];
+      }
+
+      // Apply gene z-values
+      for (let k = 0; k < N; k++) {
+        const g     = missingGenes[k];
+        const isMut = (mask >> k) & 1;
+        const p     = MEANS[g.i1];
+
+        if (isMut) {
+          z[g.i1] = (1 - MEANS[g.i1]) / SDS[g.i1];
+          z[g.i0] = (0 - MEANS[g.i0]) / SDS[g.i0];
+          weight  *= p;
+        } else {
+          z[g.i1] = (0 - MEANS[g.i1]) / SDS[g.i1];
+          z[g.i0] = (1 - MEANS[g.i0]) / SDS[g.i0];
+          weight  *= (1 - p);
+        }
+      }
+
+      const score  = activeIdxs.reduce((sum, i, k) => sum + z[i] * activeCoefs[k], 0);
+      const clsIdx = CLASSES.indexOf(assignClass(score));
+
+      if (Math.abs(clsIdx - baseIdx) >= 1) {
+        pShift += weight;
+      }
+    }
+  }
+
+  return { value: 1 - pShift, n: nMissing };
+}
+
 // ─── Batch: xlsx parsing ──────────────────────────────────────────────────────
 
 const BATCH_COLUMNS = ['id', 'sex', 'age', 'wbc', 'hb', 'plt',
@@ -223,7 +332,7 @@ function parseXlsx(buffer) {
 }
 
 // Required fields that must be present for a row to be scored (no imputation)
-const BATCH_REQUIRED = ['wbc', 'hb', 'plt', 'blasts', 'karyo'];
+const BATCH_REQUIRED = ['wbc', 'hb', 'plt', 'blasts'];
 
 // Shared range rules — must match validateSingleForm in form helpers
 const FIELD_RULES = [
@@ -306,9 +415,10 @@ function computeBatch(patients, includeDemographics) {
                skipReason: `Invalid value(s): ${issues.join('; ')}` };
     }
 
-    const encoded = encodePatient(row);
+    const encoded    = encodePatient(row);
     const { score, riskClass } = computeScore(encoded, includeDemographics);
-    return { id, score, riskClass, skipped: false, skipReason: '' };
+    const confidence = computeConfidence(encoded, riskClass, includeDemographics);
+    return { id, score, riskClass, confidence, skipped: false, skipReason: '' };
   });
 }
 
@@ -333,14 +443,15 @@ function generateTemplate() {
  * @returns {ArrayBuffer}
  */
 function resultsToXlsx(results) {
-  const header = ['ID', 'Class', 'Score', 'Note'];
+  const header = ['ID', 'Class', 'Score', 'Confidence', 'Note'];
   const rows = results.map(r =>
     r.skipped
-      ? [r.id, '', '', r.skipReason || 'Excluded']
-      : [r.id, r.riskClass, r.score.toFixed(4), '']
+      ? [r.id, '', '', '', r.skipReason || 'Excluded']
+      : [r.id, r.riskClass, r.score.toFixed(4),
+         r.confidence !== null ? Math.round(r.confidence.value * 100) + '%' : '100%', '']
   );
   const ws = XLSX.utils.aoa_to_sheet([header, ...rows]);
-  ws['!cols'] = [{ wch: 20 }, { wch: 8 }, { wch: 12 }, { wch: 45 }];
+  ws['!cols'] = [{ wch: 20 }, { wch: 8 }, { wch: 12 }, { wch: 14 }, { wch: 45 }];
   const wb = XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(wb, ws, 'iCPSS_Results');
   return XLSX.write(wb, { type: 'array', bookType: 'xlsx' });
@@ -371,8 +482,9 @@ function downloadBuffer(buffer, filename, mimeType) {
 /**
  * Render a result badge + score for single patient.
  * @param {{ score: number, riskClass: string }|null} result
+ * @param {{ value: number, n: number }|null} confidence
  */
-function renderSingleResult(result) {
+function renderSingleResult(result, confidence) {
   const container = document.getElementById('result-container');
   if (!result) {
     container.innerHTML = '';
@@ -419,6 +531,7 @@ function renderSingleResult(result) {
     <div class="result-section">
       <div class="result-class-name" style="color:${col.bg}">${fullName}</div>
       <div class="result-meta">Risk class: <strong>${riskClass}</strong> &ensp;·&ensp; Score: <strong>${score.toFixed(4)}</strong></div>
+      ${confidence !== null ? `<div class="confidence-row${confidence.value < 0.80 ? ' confidence-unreliable' : ''}">Confidence: <strong>${Math.round(confidence.value * 100)}%</strong>${confidence.value < 0.80 ? ' <span class="confidence-warn">&#9888; Unreliable prediction</span>' : ''} <span class="confidence-note">(${confidence.n} unknown variable${confidence.n > 1 ? 's' : ''})</span></div>` : ''}
       <div class="risk-rail">
         <div class="risk-rail-track"></div>
         ${railStops}
@@ -434,7 +547,7 @@ function renderSingleResult(result) {
 /**
  * Populate the hidden print sheet with full result + inputs for printing.
  */
-function populatePrintSheet(result, raw, includeDemographics) {
+function populatePrintSheet(result, raw, includeDemographics, confidence) {
   const sheet = document.getElementById('print-sheet');
   if (!sheet) return;
 
@@ -474,9 +587,10 @@ function populatePrintSheet(result, raw, includeDemographics) {
       </div>
     </div>` : '';
 
-  const karyoLabel = { '0': 'Low', '1': 'Intermediate', '2': 'High' };
+  const karyoLabel = { '0': 'Low', '1': 'Intermediate', '2': 'High', '': 'Unknown', 'null': 'Unknown' };
   const mutGenes   = ['ASXL1','DNMT3A','EZH2','RUNX1','SETBP1','STAG2','TET2','TP53','U2AF1'];
   const mutPos     = mutGenes.filter(g => Number(raw[g]) === 1);
+  const mutUnk     = mutGenes.filter(g => raw[g] === null || raw[g] === undefined);
   const demoStr    = includeDemographics
     ? `${raw.sex == 1 ? 'Male' : 'Female'}, age ${raw.age}`
     : 'Not included';
@@ -492,7 +606,7 @@ function populatePrintSheet(result, raw, includeDemographics) {
     </div>
     <hr class="ps-rule">
     <div class="ps-class-name" style="color:${col.bg}">${fullName}</div>
-    <div class="ps-score-meta">Risk class: <strong>${riskClass}</strong> &ensp;&middot;&ensp; Score: <strong>${score.toFixed(4)}</strong></div>
+    <div class="ps-score-meta">Risk class: <strong>${riskClass}</strong> &ensp;&middot;&ensp; Score: <strong>${score.toFixed(4)}</strong>${confidence !== null ? ` &ensp;&middot;&ensp; Confidence: <strong>${Math.round(confidence.value * 100)}%</strong> (${confidence.n} unknown variable${confidence.n > 1 ? 's' : ''})` : ''}</div>
     <div class="risk-rail" style="margin:16px 0 4px"><div class="risk-rail-track"></div>${railStops}</div>
     <div class="rail-labels">${railLabels}</div>
     ${outHtml}
@@ -513,7 +627,7 @@ function populatePrintSheet(result, raw, includeDemographics) {
       </tr>
       <tr>
         <td class="ps-il">Mutations detected</td>
-        <td class="ps-iv" colspan="3">${mutPos.length > 0 ? mutPos.join(', ') : 'None'}</td>
+        <td class="ps-iv" colspan="3">${mutPos.length > 0 ? mutPos.join(', ') : 'None'}${mutUnk.length > 0 ? ` <span style="color:#8e939e;font-size:0.78rem">(not tested: ${mutUnk.join(', ')})</span>` : ''}</td>
       </tr>
     </table>
     <hr class="ps-rule">
@@ -536,19 +650,25 @@ function renderBatchTable(results) {
       return `<tr style="color:var(--text-mute,#8c7b6a)">
         <td>${escHtml(String(r.id))}</td>
         <td style="font-size:0.82rem">—</td>
-        <td style="font-size:0.80rem;font-style:italic">${escHtml(r.skipReason || 'Excluded')}</td>
+        <td colspan="2" style="font-size:0.80rem;font-style:italic">${escHtml(r.skipReason || 'Excluded')}</td>
       </tr>`;
     }
-    const col = CLASS_COLORS[r.riskClass] || { bg: '#888', text: '#fff' };
-    return `<tr>
+    const col         = CLASS_COLORS[r.riskClass] || { bg: '#888', text: '#fff' };
+    const confNull    = r.confidence === null;
+    const confPct     = confNull ? 100 : Math.round(r.confidence.value * 100);
+    const unreliable  = !confNull && r.confidence.value < 0.80;
+    const confStr     = confPct + '%' + (unreliable ? ' &#9888;' : '');
+    const confColor   = unreliable ? 'var(--warn,#c0392b)' : confNull ? 'var(--text-mute)' : 'var(--text-mid)';
+    return `<tr${unreliable ? ' class="row-unreliable"' : ''}>
       <td>${escHtml(String(r.id))}</td>
       <td><span class="badge" style="background:${col.bg};color:${col.text}">${r.riskClass}</span></td>
       <td>${r.score.toFixed(4)}</td>
+      <td style="color:${confColor}; font-variant-numeric:tabular-nums">${confStr}</td>
     </tr>`;
   }).join('');
   container.innerHTML = `
     <table class="results-table">
-      <thead><tr><th>ID</th><th>Class</th><th>Score</th></tr></thead>
+      <thead><tr><th>ID</th><th>Class</th><th>Score</th><th>Confidence</th></tr></thead>
       <tbody>${rows}</tbody>
     </table>`;
 }
@@ -596,10 +716,11 @@ document.addEventListener('DOMContentLoaded', () => {
     } else {
       clearWarnings('single-warnings');
     }
-    const encoded = encodePatient(raw);
-    const result  = computeScore(encoded, demoToggle.checked);
-    renderSingleResult(result);
-    populatePrintSheet(result, raw, demoToggle.checked);
+    const encoded    = encodePatient(raw);
+    const result     = computeScore(encoded, demoToggle.checked);
+    const confidence = computeConfidence(encoded, result.riskClass, demoToggle.checked);
+    renderSingleResult(result, confidence);
+    populatePrintSheet(result, raw, demoToggle.checked, confidence);
   });
 
   clearBtn.addEventListener('click', () => {
@@ -685,23 +806,31 @@ function readSingleForm() {
   const g = (id) => document.getElementById(id);
   const sexEl   = document.querySelector('input[name="sex"]:checked');
   const karyoEl = document.querySelector('input[name="karyo"]:checked');
+
+  // Read 3-state gene radio: Mut=1, WT=0, Unknown (value="")=null
+  const geneVal = (name) => {
+    const el = document.querySelector(`input[name="${name}"]:checked`);
+    if (!el || el.value === '') return null;
+    return Number(el.value);
+  };
+
   return {
-    sex:        sexEl   ? Number(sexEl.value) : null,
-    age:        g('age').value,
-    wbc:   g('wbc').value,
-    hb:    g('hb').value,
-    plt:   g('plt').value,
+    sex:    sexEl   ? Number(sexEl.value) : null,
+    age:    g('age').value,
+    wbc:    g('wbc').value,
+    hb:     g('hb').value,
+    plt:    g('plt').value,
     blasts: g('blasts').value,
-    karyo: karyoEl ? karyoEl.value : null,
-    ASXL1:      g('ASXL1').checked  ? 1 : 0,
-    DNMT3A:     g('DNMT3A').checked ? 1 : 0,
-    EZH2:       g('EZH2').checked   ? 1 : 0,
-    RUNX1:      g('RUNX1').checked  ? 1 : 0,
-    SETBP1:     g('SETBP1').checked ? 1 : 0,
-    STAG2:      g('STAG2').checked  ? 1 : 0,
-    TET2:       g('TET2').checked   ? 1 : 0,
-    TP53:       g('TP53').checked   ? 1 : 0,
-    U2AF1:      g('U2AF1').checked  ? 1 : 0,
+    karyo:  karyoEl ? karyoEl.value : null,
+    ASXL1:  geneVal('ASXL1'),
+    DNMT3A: geneVal('DNMT3A'),
+    EZH2:   geneVal('EZH2'),
+    RUNX1:  geneVal('RUNX1'),
+    SETBP1: geneVal('SETBP1'),
+    STAG2:  geneVal('STAG2'),
+    TET2:   geneVal('TET2'),
+    TP53:   geneVal('TP53'),
+    U2AF1:  geneVal('U2AF1'),
   };
 }
 
@@ -722,9 +851,7 @@ function validateSingleForm(raw, includeDemographics) {
     }
   }
 
-  if (raw.karyo === null || raw.karyo === '' || raw.karyo === undefined) {
-    errors.push('Cytogenetic Risk (CPSS) is required.');
-  }
+  // Karyo is optional — when missing, confidence score reflects the uncertainty
 
   // Range + type validation — limits drawn from FIELD_RULES to stay in sync with batch mode
   const WARN_ABOVE = { wbc: 100, hb: 15 };

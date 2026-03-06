@@ -138,21 +138,25 @@
     .karyo-pills { display: flex; gap: 8px; flex-wrap: wrap; }
     .karyo-pill input[type="radio"] { display: none; }
     .karyo-pill label {
-      display: inline-flex; align-items: center;
-      padding: 7px 18px;
+      display: inline-flex; align-items: center; justify-content: center;
+      padding: 7px 22px;
       border: 1.5px solid var(--border-in);
-      border-radius: 100px;
-      font-size: 0.86rem; font-weight: 500;
+      border-radius: 6px;
+      font-size: 0.84rem; font-weight: 500;
       color: var(--text-mid);
       cursor: pointer;
       transition: border-color 0.15s, color 0.15s, background 0.15s;
       user-select: none;
       background: var(--bg-input);
       white-space: nowrap;
+      min-width: 56px;
     }
-    .karyo-pill label:hover { border-color: var(--accent); color: var(--accent); }
+    .karyo-pill label:hover { border-color: #5a8aba; color: #3b6d94; }
     .karyo-pill input[type="radio"]:checked + label {
-      background: var(--accent); border-color: var(--accent); color: #fff;
+      background: #dbe8f4; border-color: #7aa3c7; color: #2c5a7e; font-weight: 600;
+    }
+    .karyo-pill input[type="radio"].seg-unk:checked + label {
+      background: #eaeaea; border-color: #a3a7ae; color: #555960; font-weight: 600;
     }
     .karyo-hint-text {
       font-size: 0.75rem;
@@ -162,32 +166,60 @@
     }
     .karyo-hint-text strong { color: var(--text-mid); font-weight: 600; }
 
-    /* ── Mutation chips ──────────────────────────────────────────────────── */
+    /* ── Mutation chips (3-state segmented controls) ─────────────────────── */
     .mutation-subtext {
       font-size: 0.79rem;
       color: var(--text-mute);
-      margin-bottom: 12px;
+      margin-bottom: 14px;
     }
-    .mutation-grid { display: flex; flex-wrap: wrap; gap: 7px; }
-    .mut-chip input[type="checkbox"] { display: none; }
-    .mut-chip label {
-      display: inline-flex; align-items: center;
-      padding: 5px 14px;
-      border: 1.5px solid var(--border-in);
-      border-radius: 4px;
-      font-size: 0.82rem; font-weight: 600;
+    .mutation-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 8px;
+    }
+
+    /* 3-state gene segmented control */
+    .gene-seg {
+      display: flex; border: 1.5px solid var(--border-in); border-radius: 6px;
+      overflow: hidden; min-width: 0;
+    }
+    .gene-seg input[type="radio"] { display: none; }
+    .gene-seg .seg-gene-name {
+      padding: 7px 0; font-size: 0.78rem; font-weight: 700;
       font-family: "SF Mono", Consolas, Menlo, monospace;
-      color: var(--text-mid);
-      cursor: pointer;
-      transition: border-color 0.15s, color 0.15s, background 0.15s;
-      user-select: none;
+      color: var(--text); background: var(--bg);
+      border-right: 1px solid var(--border-in); cursor: default;
+      width: 68px; text-align: center; flex-shrink: 0;
+    }
+    .gene-seg label {
+      flex: 1; text-align: center;
+      padding: 7px 4px; font-size: 0.76rem; font-weight: 500;
+      color: var(--text-mid); cursor: pointer;
+      border-right: 1px solid var(--border-in);
       background: var(--bg-input);
-      letter-spacing: 0.02em;
+      transition: background 0.12s, color 0.12s;
+      user-select: none;
     }
-    .mut-chip label:hover { border-color: var(--accent); color: var(--accent); background: #fdf5f7; }
-    .mut-chip input[type="checkbox"]:checked + label {
-      background: var(--accent); border-color: var(--accent); color: #fff;
+    .gene-seg label:last-child { border-right: none; }
+    .gene-seg label:hover { background: #edf2f9; color: #3b6d94; }
+    .gene-seg input[type="radio"]:checked + label {
+      background: #dbe8f4; color: #2c5a7e; border-color: #7aa3c7; font-weight: 600;
     }
+    /* "?" (unknown) button uses a softer highlight */
+    .gene-seg input[type="radio"].seg-unk:checked + label {
+      background: #eaeaea; border-color: #a3a7ae; color: #555960; font-weight: 600;
+    }
+
+    /* Confidence row in single-patient result */
+    .confidence-row {
+      font-size: 0.83rem; color: var(--text-mute);
+      margin-top: -12px; margin-bottom: 16px;
+    }
+    .confidence-row strong { color: var(--text-mid); }
+    .confidence-note { font-size: 0.78rem; }
+    .confidence-unreliable strong { color: #c0392b; }
+    .confidence-warn { font-size: 0.80rem; font-weight: 600; color: #c0392b; margin-left: 4px; }
+    tr.row-unreliable td { background: #fff5f5; }
 
     /* ── Sex pills ───────────────────────────────────────────────────────── */
     .sex-pills { display: flex; gap: 8px; }
@@ -550,6 +582,7 @@
       .header-inner { flex-wrap: wrap; gap: 4px; }
       main { padding: 20px 16px 60px; }
       .form-grid-4 { grid-template-columns: 1fr 1fr; }
+      .mutation-grid { grid-template-columns: 1fr; }
     }
   </style>
 </head>
@@ -612,6 +645,10 @@
             <input type="radio" name="karyo" id="karyo-2" value="2">
             <label for="karyo-2">High</label>
           </span>
+          <span class="karyo-pill">
+            <input type="radio" name="karyo" id="karyo-unk" value="" class="seg-unk">
+            <label for="karyo-unk">?</label>
+          </span>
         </div>
         <div class="karyo-hint-text">
           <strong>Low:</strong> normal karyotype or −Y &ensp;·&ensp;
@@ -623,17 +660,62 @@
       <!-- Somatic Mutations -->
       <div class="form-section">
         <div class="section-title">Somatic Mutations</div>
-        <p class="mutation-subtext">Mark all that are present. Untested genes are treated as wild-type.</p>
+        <p class="mutation-subtext">Select mutation status for each gene. Use <strong>?</strong> for genes not tested — the score will include a confidence estimate.</p>
         <div class="mutation-grid">
-          <span class="mut-chip"><input type="checkbox" id="ASXL1"><label for="ASXL1">ASXL1</label></span>
-          <span class="mut-chip"><input type="checkbox" id="DNMT3A"><label for="DNMT3A">DNMT3A</label></span>
-          <span class="mut-chip"><input type="checkbox" id="EZH2"><label for="EZH2">EZH2</label></span>
-          <span class="mut-chip"><input type="checkbox" id="RUNX1"><label for="RUNX1">RUNX1</label></span>
-          <span class="mut-chip"><input type="checkbox" id="SETBP1"><label for="SETBP1">SETBP1</label></span>
-          <span class="mut-chip"><input type="checkbox" id="STAG2"><label for="STAG2">STAG2</label></span>
-          <span class="mut-chip"><input type="checkbox" id="TET2"><label for="TET2">TET2</label></span>
-          <span class="mut-chip"><input type="checkbox" id="TP53"><label for="TP53">TP53</label></span>
-          <span class="mut-chip"><input type="checkbox" id="U2AF1"><label for="U2AF1">U2AF1</label></span>
+          <div class="gene-seg">
+            <span class="seg-gene-name">ASXL1</span>
+            <input type="radio" name="ASXL1" id="ASXL1-wt" value="0" checked><label for="ASXL1-wt">Unmutated</label>
+            <input type="radio" name="ASXL1" id="ASXL1-mut" value="1"><label for="ASXL1-mut">Mutated</label>
+            <input type="radio" name="ASXL1" id="ASXL1-unk" value="" class="seg-unk"><label for="ASXL1-unk">?</label>
+          </div>
+          <div class="gene-seg">
+            <span class="seg-gene-name">DNMT3A</span>
+            <input type="radio" name="DNMT3A" id="DNMT3A-wt" value="0" checked><label for="DNMT3A-wt">Unmutated</label>
+            <input type="radio" name="DNMT3A" id="DNMT3A-mut" value="1"><label for="DNMT3A-mut">Mutated</label>
+            <input type="radio" name="DNMT3A" id="DNMT3A-unk" value="" class="seg-unk"><label for="DNMT3A-unk">?</label>
+          </div>
+          <div class="gene-seg">
+            <span class="seg-gene-name">EZH2</span>
+            <input type="radio" name="EZH2" id="EZH2-wt" value="0" checked><label for="EZH2-wt">Unmutated</label>
+            <input type="radio" name="EZH2" id="EZH2-mut" value="1"><label for="EZH2-mut">Mutated</label>
+            <input type="radio" name="EZH2" id="EZH2-unk" value="" class="seg-unk"><label for="EZH2-unk">?</label>
+          </div>
+          <div class="gene-seg">
+            <span class="seg-gene-name">RUNX1</span>
+            <input type="radio" name="RUNX1" id="RUNX1-wt" value="0" checked><label for="RUNX1-wt">Unmutated</label>
+            <input type="radio" name="RUNX1" id="RUNX1-mut" value="1"><label for="RUNX1-mut">Mutated</label>
+            <input type="radio" name="RUNX1" id="RUNX1-unk" value="" class="seg-unk"><label for="RUNX1-unk">?</label>
+          </div>
+          <div class="gene-seg">
+            <span class="seg-gene-name">SETBP1</span>
+            <input type="radio" name="SETBP1" id="SETBP1-wt" value="0" checked><label for="SETBP1-wt">Unmutated</label>
+            <input type="radio" name="SETBP1" id="SETBP1-mut" value="1"><label for="SETBP1-mut">Mutated</label>
+            <input type="radio" name="SETBP1" id="SETBP1-unk" value="" class="seg-unk"><label for="SETBP1-unk">?</label>
+          </div>
+          <div class="gene-seg">
+            <span class="seg-gene-name">STAG2</span>
+            <input type="radio" name="STAG2" id="STAG2-wt" value="0" checked><label for="STAG2-wt">Unmutated</label>
+            <input type="radio" name="STAG2" id="STAG2-mut" value="1"><label for="STAG2-mut">Mutated</label>
+            <input type="radio" name="STAG2" id="STAG2-unk" value="" class="seg-unk"><label for="STAG2-unk">?</label>
+          </div>
+          <div class="gene-seg">
+            <span class="seg-gene-name">TET2</span>
+            <input type="radio" name="TET2" id="TET2-wt" value="0" checked><label for="TET2-wt">Unmutated</label>
+            <input type="radio" name="TET2" id="TET2-mut" value="1"><label for="TET2-mut">Mutated</label>
+            <input type="radio" name="TET2" id="TET2-unk" value="" class="seg-unk"><label for="TET2-unk">?</label>
+          </div>
+          <div class="gene-seg">
+            <span class="seg-gene-name">TP53</span>
+            <input type="radio" name="TP53" id="TP53-wt" value="0" checked><label for="TP53-wt">Unmutated</label>
+            <input type="radio" name="TP53" id="TP53-mut" value="1"><label for="TP53-mut">Mutated</label>
+            <input type="radio" name="TP53" id="TP53-unk" value="" class="seg-unk"><label for="TP53-unk">?</label>
+          </div>
+          <div class="gene-seg">
+            <span class="seg-gene-name">U2AF1</span>
+            <input type="radio" name="U2AF1" id="U2AF1-wt" value="0" checked><label for="U2AF1-wt">Unmutated</label>
+            <input type="radio" name="U2AF1" id="U2AF1-mut" value="1"><label for="U2AF1-mut">Mutated</label>
+            <input type="radio" name="U2AF1" id="U2AF1-unk" value="" class="seg-unk"><label for="U2AF1-unk">?</label>
+          </div>
         </div>
       </div>
 
@@ -692,8 +774,8 @@
     <div id="result-container"></div>
 
     <div class="info-note">
-      <strong>Required:</strong> CBC (WBC, Hemoglobin, Platelets), BM Blast Count, and Cytogenetic Risk.<br>
-      Somatic mutations are optional; untested genes are imputed to training-set mean.
+      <strong>Required:</strong> CBC (WBC, Hemoglobin, Platelets) and BM Blast Count.<br>
+      Somatic mutations default to <strong>Unmutated</strong>. Select <strong>?</strong> for untested genes or unknown cytogenetic risk to obtain a confidence estimate based on training-set frequencies.
     </div>
 
   </div><!-- /panel-single -->
@@ -710,13 +792,13 @@
       <button type="button" id="btn-template" class="btn btn-outline">&#8659; Download Template (.xlsx)</button>
       <div class="info-note-batch" style="margin-top:14px;">
         <strong>Required columns:</strong>
-        <code>wbc</code>, <code>hb</code>, <code>plt</code>, <code>blasts</code>,
-        <code>karyo</code> (0=Low, 1=Intermediate, 2=High).
+        <code>wbc</code>, <code>hb</code>, <code>plt</code>, <code>blasts</code>.
         Rows missing any of these will not be scored.<br>
         <strong>Optional:</strong>
+        <code>karyo</code> (0=Low, 1=Intermediate, 2=High),
         mutation columns (0/1): <code>ASXL1</code> <code>DNMT3A</code> <code>EZH2</code> <code>RUNX1</code>
         <code>SETBP1</code> <code>STAG2</code> <code>TET2</code> <code>TP53</code> <code>U2AF1</code>
-        (absent or blank = wild-type);
+        (blank = unknown; 0 = unmutated; 1 = mutated);
         <code>id</code> for row labels;
         <code>sex</code> (1=Male, 0=Female) and <code>age</code> when using demographics adjustment.
       </div>
