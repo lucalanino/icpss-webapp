@@ -545,7 +545,7 @@ function renderSingleResult(result, confidence) {
     <div class="result-section">
       <div class="result-class-name" style="color:${col.bg}">${fullName}</div>
       <div class="result-meta">Risk class: <strong>${riskClass}</strong> &ensp;·&ensp; Score: <strong>${score.toFixed(4)}</strong></div>
-      ${confidence !== null ? `<div class="confidence-row${confidence.value < 0.80 ? ' confidence-unreliable' : ''}">Confidence: <strong>${Math.round(confidence.value * 100)}%</strong>${confidence.value < 0.80 ? ' <span class="confidence-warn">&#9888; Unreliable prediction</span>' : ''} <span class="confidence-note">(${confidence.n} unknown variable${confidence.n > 1 ? 's' : ''})</span></div>` : ''}
+      ${confidence !== null ? `<div class="confidence-row${confidence.value < 0.80 ? ' confidence-unreliable' : ''}">Confidence: <strong>${Math.round(confidence.value * 100)}%</strong>${confidence.value < 0.80 ? ' <span class="confidence-warn">&#9888; Unreliable prediction — risk class may change with complete data</span>' : ''} <span class="confidence-note">(${confidence.n} missing value${confidence.n > 1 ? 's' : ''})</span></div>` : ''}
       <div class="risk-rail">
         <div class="risk-rail-track"></div>
         ${railStops}
