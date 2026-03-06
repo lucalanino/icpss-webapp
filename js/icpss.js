@@ -592,7 +592,7 @@ function populatePrintSheet(result, raw, includeDemographics, confidence) {
   const mutPos     = mutGenes.filter(g => Number(raw[g]) === 1);
   const mutUnk     = mutGenes.filter(g => raw[g] === null || raw[g] === undefined);
   const demoStr    = includeDemographics
-    ? `${raw.sex == 1 ? 'Male' : 'Female'}, age ${raw.age}`
+    ? `${raw.sex == 1 ? 'Male' : 'Female'}, age ${escHtml(String(raw.age))}`
     : 'Not included';
 
   sheet.innerHTML = `
@@ -614,12 +614,12 @@ function populatePrintSheet(result, raw, includeDemographics, confidence) {
     <div class="ps-section-label">Parameters Entered</div>
     <table class="ps-inputs-table">
       <tr>
-        <td class="ps-il">WBC</td><td class="ps-iv">${raw.wbc} &times;10&#x2079;/L</td>
-        <td class="ps-il">Hemoglobin</td><td class="ps-iv">${raw.hb} g/dL</td>
+        <td class="ps-il">WBC</td><td class="ps-iv">${escHtml(String(raw.wbc))} &times;10&#x2079;/L</td>
+        <td class="ps-il">Hemoglobin</td><td class="ps-iv">${escHtml(String(raw.hb))} g/dL</td>
       </tr>
       <tr>
-        <td class="ps-il">Platelets</td><td class="ps-iv">${raw.plt} &times;10&#x2079;/L</td>
-        <td class="ps-il">BM Blast Count</td><td class="ps-iv">${raw.blasts}%</td>
+        <td class="ps-il">Platelets</td><td class="ps-iv">${escHtml(String(raw.plt))} &times;10&#x2079;/L</td>
+        <td class="ps-il">BM Blast Count</td><td class="ps-iv">${escHtml(String(raw.blasts))}%</td>
       </tr>
       <tr>
         <td class="ps-il">Cytogenetic Risk</td><td class="ps-iv">${karyoLabel[String(raw.karyo)] || '&mdash;'}</td>
@@ -702,14 +702,28 @@ document.addEventListener('DOMContentLoaded', () => {
   const clearBtn   = document.getElementById('btn-clear');
   const demoToggle = document.getElementById('demo-toggle');
 
+  function highlightErrorFields(ids) {
+    singleForm.querySelectorAll('input[type="number"], input[type="text"]')
+      .forEach(el => el.classList.remove('input-error'));
+    ids.forEach(id => {
+      const el = document.getElementById(id);
+      if (el) el.classList.add('input-error');
+    });
+  }
+
+  singleForm.querySelectorAll('input[type="number"], input[type="text"]')
+    .forEach(el => el.addEventListener('input', () => el.classList.remove('input-error')));
+
   singleBtn.addEventListener('click', () => {
     const raw = readSingleForm();
-    const { errors, warnings } = validateSingleForm(raw, demoToggle.checked);
+    const { errors, warnings, errorFields } = validateSingleForm(raw, demoToggle.checked);
     if (errors.length > 0) {
       showErrors(errors, 'single-errors');
+      highlightErrorFields(errorFields);
       clearWarnings('single-warnings');
       return;
     }
+    highlightErrorFields([]);
     clearErrors('single-errors');
     if (warnings.length > 0) {
       showWarnings(warnings, 'single-warnings');
@@ -725,6 +739,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
   clearBtn.addEventListener('click', () => {
     singleForm.reset();
+    highlightErrorFields([]);
     // Sync demo section visibility after form reset (reset() doesn't fire 'change')
     document.getElementById('demo-toggle').dispatchEvent(new Event('change'));
     renderSingleResult(null);
@@ -837,17 +852,19 @@ function readSingleForm() {
 function validateSingleForm(raw, includeDemographics) {
   const errors = [];
   const warnings = [];
+  const errorFields = [];
 
   // Required clinical fields
   const clinicalRequired = [
-    { val: raw.wbc,   label: 'WBC'                     },
-    { val: raw.hb,    label: 'Hemoglobin'              },
-    { val: raw.plt,   label: 'Platelets'               },
-    { val: raw.blasts, label: 'Bone Marrow Blast Count' },
+    { val: raw.wbc,    id: 'wbc',    label: 'WBC',                unit: '×10⁹/L' },
+    { val: raw.hb,     id: 'hb',     label: 'Hemoglobin',         unit: 'g/dL'   },
+    { val: raw.plt,    id: 'plt',    label: 'Platelet count',     unit: '×10⁹/L' },
+    { val: raw.blasts, id: 'blasts', label: 'BM Blast Count',     unit: '%'      },
   ];
   for (const f of clinicalRequired) {
     if (f.val === '' || f.val === null || f.val === undefined) {
-      errors.push(`${f.label} is required.`);
+      errors.push(`${f.label} is missing — enter a value in ${f.unit}`);
+      errorFields.push(f.id);
     }
   }
 
@@ -855,46 +872,53 @@ function validateSingleForm(raw, includeDemographics) {
 
   // Range + type validation — limits drawn from FIELD_RULES to stay in sync with batch mode
   const WARN_ABOVE = { wbc: 100, hb: 15 };
+  const UNITS = { wbc: '×10⁹/L', hb: 'g/dL', plt: '×10⁹/L', blasts: '%' };
+  const EXAMPLES = { plt: 'e.g. 120', blasts: 'e.g. 4' };
   const rangeFields = FIELD_RULES.map(f => ({
-    val: raw[f.key], label: f.label, min: f.min, max: f.max, isInt: f.isInt,
-    warnAbove: WARN_ABOVE[f.key] ?? null,
+    val: raw[f.key], id: f.key, label: f.label, min: f.min, max: f.max, isInt: f.isInt,
+    unit: UNITS[f.key], warnAbove: WARN_ABOVE[f.key] ?? null,
   }));
   for (const f of rangeFields) {
     if (f.val === '' || f.val === null || f.val === undefined) continue;
     const n = Number(f.val);
     if (isNaN(n)) {
-      errors.push(`${f.label} must be a number.`);
+      errors.push(`${f.label} — not a valid number`);
+      errorFields.push(f.id);
       continue;
     }
     if (n < f.min || n > f.max) {
-      errors.push(`${f.label} must be between ${f.min} and ${f.max}.`);
+      errors.push(`${f.label} out of range — expected ${f.min}–${f.max} ${f.unit}`);
+      errorFields.push(f.id);
       continue;
     }
     if (f.isInt && !Number.isInteger(n)) {
-      errors.push(`${f.label} must be a whole number.`);
+      errors.push(`${f.label} must be a whole number (${EXAMPLES[f.id] || ''})`);
+      errorFields.push(f.id);
       continue;
     }
     if (f.warnAbove !== null && n > f.warnAbove) {
-      warnings.push(`${f.label} value (${n}) is unusually high — please verify.`);
+      warnings.push(`${f.label} (${n} ${f.unit}) is unusually high — please double-check`);
     }
   }
 
   // Demographics validation (when toggle ON)
   if (includeDemographics) {
     if (raw.sex === null || raw.sex === undefined) {
-      errors.push('Sex is required when demographics adjustment is enabled.');
+      errors.push('Select a sex to use the demographics-adjusted score');
     }
     if (raw.age === '' || raw.age === null || isNaN(Number(raw.age))) {
-      errors.push('Age is required when demographics adjustment is enabled.');
+      errors.push('Enter an age (65–90) to use the demographics-adjusted score');
+      errorFields.push('age');
     } else {
       const age = Number(raw.age);
       if (age < 65 || age > 90) {
-        errors.push('Age must be between 65 and 90 for demographics-adjusted scoring.');
+        errors.push('Age must be between 65 and 90 for the demographics-adjusted score');
+        errorFields.push('age');
       }
     }
   }
 
-  return { errors, warnings };
+  return { errors, warnings, errorFields };
 }
 
 function showErrors(errs, containerId) {
