@@ -51,6 +51,7 @@
     }
     .site-name strong { color: var(--accent); }
     .site-sub { font-size: 0.82rem; color: var(--text-mute); }
+    .site-ref { font-size: 0.75rem; color: var(--text-mute); margin-top: 2px; }
 
     /* ── Main ────────────────────────────────────────────────────────────── */
     main {
@@ -604,7 +605,8 @@
 <header>
   <div class="header-inner">
     <div class="site-name"><strong>iCPSS</strong> Risk Score Calculator</div>
-    <span class="site-sub">Integrated Clinical and Prognostic Scoring System for CMML &mdash; adapted from [Citation in press]</span>
+    <span class="site-sub">International CMML Prognostic Scoring System</span>
+    <span class="site-ref">Author1 X, Author2 Y, Author3 Z, et al. [Article Title]. <em>[Journal Name]</em>. [Year];[vol]([issue]):[pages]. doi:[10.xxxx/xxxxxxxx]</span>
   </div>
 </header>
 
@@ -798,6 +800,10 @@
 
   <!-- ── Batch Panel ───────────────────────────────────────────────────────── -->
   <div id="panel-batch" class="tab-panel" role="tabpanel">
+
+    <p style="font-size:0.86rem; color:var(--text-mid); margin-bottom:24px;">
+      Score an entire cohort at once. All computation runs locally — no data leaves your device.
+    </p>
 
     <!-- Step 1 -->
     <div class="batch-step">
