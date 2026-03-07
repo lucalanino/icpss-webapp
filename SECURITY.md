@@ -2,9 +2,7 @@
 
 ## Reporting a Vulnerability
 
-If you discover a security issue or a computation bug that could affect risk score accuracy, please report it.
-
-Please do not open a public GitHub issue for security-related reports.
+If you discover a security issue or a computation bug that could affect risk score accuracy, please open a report via the [Issues tab](https://github.com/lucalanino/icpss-webapp/issues).
 
 ## Scope
 
