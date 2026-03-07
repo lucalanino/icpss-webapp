@@ -187,9 +187,19 @@
       min-width: 56px;
     }
     .karyo-pill label:hover { border-color: #5a8aba; color: #3b6d94; }
-    .karyo-pill input[type="radio"]:checked + label {
+    /* Low → blue (favorable) */
+    .karyo-pill input[type="radio"][value="0"]:checked + label {
       background: #dbe8f4; border-color: #7aa3c7; color: #2c5a7e; font-weight: 600;
     }
+    /* Intermediate → lavender */
+    .karyo-pill input[type="radio"][value="1"]:checked + label {
+      background: #ede5f5; border-color: #a68bc7; color: #5b3a7e; font-weight: 600;
+    }
+    /* High → rose (adverse) */
+    .karyo-pill input[type="radio"][value="2"]:checked + label {
+      background: #fce4e4; border-color: #e09090; color: #8b3a3a; font-weight: 600;
+    }
+    /* Unknown → amber */
     .karyo-pill input[type="radio"].seg-unk:checked + label {
       background: rgba(245, 158, 11, 0.15); border-color: #d97706; color: #92400e; font-weight: 600;
     }
@@ -216,15 +226,17 @@
     /* 3-state gene segmented control */
     .gene-seg {
       display: flex; border: 1.5px solid var(--border-in); border-radius: 6px;
-      overflow: hidden; min-width: 0;
+      overflow: hidden; min-width: 0; flex: 1;
     }
     .gene-seg input[type="radio"] { display: none; }
-    .gene-seg .seg-gene-name {
-      padding: 7px 0; font-size: 0.78rem; font-weight: 700;
+    .gene-row {
+      display: flex; align-items: center; gap: 8px;
+    }
+    .gene-row .seg-gene-name {
+      font-size: 0.78rem; font-weight: 700; font-style: italic;
       font-family: "SF Mono", Consolas, Menlo, monospace;
-      color: var(--text); background: var(--bg);
-      border-right: 1px solid var(--border-in); cursor: default;
-      width: 68px; text-align: center; flex-shrink: 0;
+      color: var(--text-mid);
+      width: 58px; text-align: right; flex-shrink: 0;
     }
     .gene-seg label {
       flex: 1; text-align: center;
@@ -237,12 +249,20 @@
     }
     .gene-seg label:last-child { border-right: none; }
     .gene-seg label:hover { background: #edf2f9; color: #3b6d94; }
-    .gene-seg input[type="radio"]:checked + label {
-      background: #dbe8f4; color: #2c5a7e; border-color: #7aa3c7; font-weight: 600;
+    /* Unmutated → blue (favorable) */
+    .gene-seg:has(input[value="0"]:checked) { border-color: #7aa3c7; }
+    .gene-seg input[type="radio"][value="0"]:checked + label {
+      background: #dbe8f4; color: #2c5a7e; font-weight: 600;
     }
-    /* "?" (unknown) button uses a softer highlight */
+    /* Mutated → rose (adverse) */
+    .gene-seg:has(input[value="1"]:checked) { border-color: #e09090; }
+    .gene-seg input[type="radio"][value="1"]:checked + label {
+      background: #fce4e4; color: #8b3a3a; font-weight: 600;
+    }
+    /* Unknown → amber */
+    .gene-seg:has(.seg-unk:checked) { border-color: #d97706; }
     .gene-seg input[type="radio"].seg-unk:checked + label {
-      background: rgba(245, 158, 11, 0.15); border-color: #d97706; color: #92400e; font-weight: 600;
+      background: rgba(245, 158, 11, 0.15); color: #92400e; font-weight: 600;
     }
 
     /* Confidence row in single-patient result */
@@ -705,59 +725,77 @@
         <div class="section-title">Step 3 — Somatic Mutations</div>
         <p class="mutation-subtext">Select mutation status for each gene. Use <strong>?</strong> for genes not tested — the score will include a confidence estimate.</p>
         <div class="mutation-grid">
-          <div class="gene-seg">
+          <div class="gene-row">
             <span class="seg-gene-name">ASXL1</span>
-            <input type="radio" name="ASXL1" id="ASXL1-wt" value="0" checked><label for="ASXL1-wt">Unmutated</label>
-            <input type="radio" name="ASXL1" id="ASXL1-mut" value="1"><label for="ASXL1-mut">Mutated</label>
-            <input type="radio" name="ASXL1" id="ASXL1-unk" value="" class="seg-unk"><label for="ASXL1-unk">?</label>
+            <div class="gene-seg">
+              <input type="radio" name="ASXL1" id="ASXL1-wt" value="0" checked><label for="ASXL1-wt">Unmutated</label>
+              <input type="radio" name="ASXL1" id="ASXL1-mut" value="1"><label for="ASXL1-mut">Mutated</label>
+              <input type="radio" name="ASXL1" id="ASXL1-unk" value="" class="seg-unk"><label for="ASXL1-unk">?</label>
+            </div>
           </div>
-          <div class="gene-seg">
+          <div class="gene-row">
             <span class="seg-gene-name">DNMT3A</span>
-            <input type="radio" name="DNMT3A" id="DNMT3A-wt" value="0" checked><label for="DNMT3A-wt">Unmutated</label>
-            <input type="radio" name="DNMT3A" id="DNMT3A-mut" value="1"><label for="DNMT3A-mut">Mutated</label>
-            <input type="radio" name="DNMT3A" id="DNMT3A-unk" value="" class="seg-unk"><label for="DNMT3A-unk">?</label>
+            <div class="gene-seg">
+              <input type="radio" name="DNMT3A" id="DNMT3A-wt" value="0" checked><label for="DNMT3A-wt">Unmutated</label>
+              <input type="radio" name="DNMT3A" id="DNMT3A-mut" value="1"><label for="DNMT3A-mut">Mutated</label>
+              <input type="radio" name="DNMT3A" id="DNMT3A-unk" value="" class="seg-unk"><label for="DNMT3A-unk">?</label>
+            </div>
           </div>
-          <div class="gene-seg">
+          <div class="gene-row">
             <span class="seg-gene-name">EZH2</span>
-            <input type="radio" name="EZH2" id="EZH2-wt" value="0" checked><label for="EZH2-wt">Unmutated</label>
-            <input type="radio" name="EZH2" id="EZH2-mut" value="1"><label for="EZH2-mut">Mutated</label>
-            <input type="radio" name="EZH2" id="EZH2-unk" value="" class="seg-unk"><label for="EZH2-unk">?</label>
+            <div class="gene-seg">
+              <input type="radio" name="EZH2" id="EZH2-wt" value="0" checked><label for="EZH2-wt">Unmutated</label>
+              <input type="radio" name="EZH2" id="EZH2-mut" value="1"><label for="EZH2-mut">Mutated</label>
+              <input type="radio" name="EZH2" id="EZH2-unk" value="" class="seg-unk"><label for="EZH2-unk">?</label>
+            </div>
           </div>
-          <div class="gene-seg">
+          <div class="gene-row">
             <span class="seg-gene-name">RUNX1</span>
-            <input type="radio" name="RUNX1" id="RUNX1-wt" value="0" checked><label for="RUNX1-wt">Unmutated</label>
-            <input type="radio" name="RUNX1" id="RUNX1-mut" value="1"><label for="RUNX1-mut">Mutated</label>
-            <input type="radio" name="RUNX1" id="RUNX1-unk" value="" class="seg-unk"><label for="RUNX1-unk">?</label>
+            <div class="gene-seg">
+              <input type="radio" name="RUNX1" id="RUNX1-wt" value="0" checked><label for="RUNX1-wt">Unmutated</label>
+              <input type="radio" name="RUNX1" id="RUNX1-mut" value="1"><label for="RUNX1-mut">Mutated</label>
+              <input type="radio" name="RUNX1" id="RUNX1-unk" value="" class="seg-unk"><label for="RUNX1-unk">?</label>
+            </div>
           </div>
-          <div class="gene-seg">
+          <div class="gene-row">
             <span class="seg-gene-name">SETBP1</span>
-            <input type="radio" name="SETBP1" id="SETBP1-wt" value="0" checked><label for="SETBP1-wt">Unmutated</label>
-            <input type="radio" name="SETBP1" id="SETBP1-mut" value="1"><label for="SETBP1-mut">Mutated</label>
-            <input type="radio" name="SETBP1" id="SETBP1-unk" value="" class="seg-unk"><label for="SETBP1-unk">?</label>
+            <div class="gene-seg">
+              <input type="radio" name="SETBP1" id="SETBP1-wt" value="0" checked><label for="SETBP1-wt">Unmutated</label>
+              <input type="radio" name="SETBP1" id="SETBP1-mut" value="1"><label for="SETBP1-mut">Mutated</label>
+              <input type="radio" name="SETBP1" id="SETBP1-unk" value="" class="seg-unk"><label for="SETBP1-unk">?</label>
+            </div>
           </div>
-          <div class="gene-seg">
+          <div class="gene-row">
             <span class="seg-gene-name">STAG2</span>
-            <input type="radio" name="STAG2" id="STAG2-wt" value="0" checked><label for="STAG2-wt">Unmutated</label>
-            <input type="radio" name="STAG2" id="STAG2-mut" value="1"><label for="STAG2-mut">Mutated</label>
-            <input type="radio" name="STAG2" id="STAG2-unk" value="" class="seg-unk"><label for="STAG2-unk">?</label>
+            <div class="gene-seg">
+              <input type="radio" name="STAG2" id="STAG2-wt" value="0" checked><label for="STAG2-wt">Unmutated</label>
+              <input type="radio" name="STAG2" id="STAG2-mut" value="1"><label for="STAG2-mut">Mutated</label>
+              <input type="radio" name="STAG2" id="STAG2-unk" value="" class="seg-unk"><label for="STAG2-unk">?</label>
+            </div>
           </div>
-          <div class="gene-seg">
+          <div class="gene-row">
             <span class="seg-gene-name">TET2</span>
-            <input type="radio" name="TET2" id="TET2-wt" value="0" checked><label for="TET2-wt">Unmutated</label>
-            <input type="radio" name="TET2" id="TET2-mut" value="1"><label for="TET2-mut">Mutated</label>
-            <input type="radio" name="TET2" id="TET2-unk" value="" class="seg-unk"><label for="TET2-unk">?</label>
+            <div class="gene-seg">
+              <input type="radio" name="TET2" id="TET2-wt" value="0" checked><label for="TET2-wt">Unmutated</label>
+              <input type="radio" name="TET2" id="TET2-mut" value="1"><label for="TET2-mut">Mutated</label>
+              <input type="radio" name="TET2" id="TET2-unk" value="" class="seg-unk"><label for="TET2-unk">?</label>
+            </div>
           </div>
-          <div class="gene-seg">
+          <div class="gene-row">
             <span class="seg-gene-name">TP53</span>
-            <input type="radio" name="TP53" id="TP53-wt" value="0" checked><label for="TP53-wt">Unmutated</label>
-            <input type="radio" name="TP53" id="TP53-mut" value="1"><label for="TP53-mut">Mutated</label>
-            <input type="radio" name="TP53" id="TP53-unk" value="" class="seg-unk"><label for="TP53-unk">?</label>
+            <div class="gene-seg">
+              <input type="radio" name="TP53" id="TP53-wt" value="0" checked><label for="TP53-wt">Unmutated</label>
+              <input type="radio" name="TP53" id="TP53-mut" value="1"><label for="TP53-mut">Mutated</label>
+              <input type="radio" name="TP53" id="TP53-unk" value="" class="seg-unk"><label for="TP53-unk">?</label>
+            </div>
           </div>
-          <div class="gene-seg">
+          <div class="gene-row">
             <span class="seg-gene-name">U2AF1</span>
-            <input type="radio" name="U2AF1" id="U2AF1-wt" value="0" checked><label for="U2AF1-wt">Unmutated</label>
-            <input type="radio" name="U2AF1" id="U2AF1-mut" value="1"><label for="U2AF1-mut">Mutated</label>
-            <input type="radio" name="U2AF1" id="U2AF1-unk" value="" class="seg-unk"><label for="U2AF1-unk">?</label>
+            <div class="gene-seg">
+              <input type="radio" name="U2AF1" id="U2AF1-wt" value="0" checked><label for="U2AF1-wt">Unmutated</label>
+              <input type="radio" name="U2AF1" id="U2AF1-mut" value="1"><label for="U2AF1-mut">Mutated</label>
+              <input type="radio" name="U2AF1" id="U2AF1-unk" value="" class="seg-unk"><label for="U2AF1-unk">?</label>
+            </div>
           </div>
         </div>
       </div>
