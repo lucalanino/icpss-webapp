@@ -2,7 +2,7 @@
 
 ## Reporting a Vulnerability
 
-If you discover a security issue or a computation bug that could affect risk score accuracy, please report it privately by emailing **luca.lanino@yale.edu**.
+If you discover a security issue or a computation bug that could affect risk score accuracy, please report it.
 
 Please do not open a public GitHub issue for security-related reports.
 
