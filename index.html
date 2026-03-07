@@ -76,7 +76,7 @@
     .site-name strong { color: var(--accent); }
     .site-ref { font-size: 0.78rem; color: var(--text-mute); margin-top: 2px; }
     .site-desc { font-size: 0.84rem; color: var(--text-mute); margin-top: 6px; line-height: 1.45; }
-    .site-desc-mobile { display: none; }
+
 
     /* ── Main ────────────────────────────────────────────────────────────── */
     main {
@@ -644,9 +644,6 @@
       main { padding: 20px 16px 60px; }
       .form-grid-4 { grid-template-columns: 1fr 1fr; }
       .mutation-grid { grid-template-columns: 1fr; }
-      .tab-btn[data-tab="batch"] { display: none; }
-      .site-desc-desktop { display: none; }
-      .site-desc-mobile { display: block; }
       .contact-cols { flex-direction: column; gap: 10px; }
     }
   </style>
@@ -656,9 +653,8 @@
 <header>
   <div class="header-inner">
     <div class="site-name"><strong>iCPSS</strong> Risk Score Calculator</div>
-<span class="site-ref">Lanino L, Hunter AM, et al. Molecular-Based Ecosystem to Improve Personalized Medicine in Chronic Myelomonocytic Leukemia. <em>In press</em>.</span>
-    <p class="site-desc site-desc-desktop">Calculate iCPSS risk scores for Chronic Myelomonocytic Leukemia (CMML) using clinical and molecular data. Supports single-patient and batch scoring. Fully client-side — no data leaves your device.</p>
-    <p class="site-desc site-desc-mobile">Calculate iCPSS risk scores for Chronic Myelomonocytic Leukemia (CMML) using clinical and molecular data. Fully client-side — no data leaves your device. <strong>Cohort scoring is available on desktop.</strong></p>
+    <span class="site-ref">Lanino L, Hunter AM, et al. Molecular-Based Ecosystem to Improve Personalized Medicine in Chronic Myelomonocytic Leukemia. <em>In press</em>.</span>
+    <p class="site-desc">Calculate iCPSS risk scores for Chronic Myelomonocytic Leukemia (CMML) using clinical and molecular data. Supports single-patient and batch scoring. Fully client-side — no data leaves your device.</p>
   </div>
 </header>
 
@@ -933,7 +929,7 @@
         </button>
       </div>
       <ul class="warning-list" id="batch-warnings"></ul>
-      <div id="batch-results" style="max-height:420px; overflow-y:auto;"><p class="empty-msg">Upload a file to see results.</p></div>
+      <div id="batch-results" style="max-height:420px; overflow:auto;"><p class="empty-msg">Upload a file to see results.</p></div>
     </div>
 
   </div><!-- /panel-batch -->
