@@ -235,8 +235,10 @@
     .gene-row .seg-gene-name {
       font-size: 0.78rem; font-weight: 700; font-style: italic;
       font-family: "SF Mono", Consolas, Menlo, monospace;
-      color: var(--text-mid);
-      width: 58px; text-align: right; flex-shrink: 0;
+      color: var(--text);
+      background: rgba(0,0,0,0.08);
+      padding: 3px 8px; border-radius: 4px;
+      width: 68px; text-align: center; flex-shrink: 0;
     }
     .gene-seg label {
       flex: 1; text-align: center;
@@ -247,7 +249,7 @@
       transition: background 0.12s, color 0.12s;
       user-select: none;
     }
-    .gene-seg label:last-child { border-right: none; }
+    .gene-seg label:last-child { border-right: none; flex: 0 0 36px; }
     .gene-seg label:hover { background: #edf2f9; color: #3b6d94; }
     /* Unmutated → blue (favorable) */
     .gene-seg:has(input[value="0"]:checked) { border-color: #7aa3c7; }
