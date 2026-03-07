@@ -71,11 +71,11 @@
       font-weight: normal;
       color: var(--text);
       letter-spacing: -0.01em;
+      margin-bottom: 16px;
     }
     .site-name strong { color: var(--accent); }
-    .site-sub { font-size: 0.84rem; color: var(--text-mute); }
     .site-ref { font-size: 0.78rem; color: var(--text-mute); margin-top: 2px; }
-    .site-desc { font-size: 0.84rem; color: var(--text-mute); margin-top: 6px; line-height: 1.45; max-width: 720px; }
+    .site-desc { font-size: 0.84rem; color: var(--text-mute); margin-top: 6px; line-height: 1.45; }
 
     /* ── Main ────────────────────────────────────────────────────────────── */
     main {
@@ -631,8 +631,7 @@
 <header>
   <div class="header-inner">
     <div class="site-name"><strong>iCPSS</strong> Risk Score Calculator</div>
-    <span class="site-sub">International CMML Prognostic Scoring System</span>
-    <span class="site-ref">Lanino L, Hunter AM, et al. Molecular-Based Ecosystem to Improve Personalized Medicine in Chronic Myelomonocytic Leukemia. <em>In press</em>.</span>
+<span class="site-ref">Lanino L, Hunter AM, et al. Molecular-Based Ecosystem to Improve Personalized Medicine in Chronic Myelomonocytic Leukemia. <em>In press</em>.</span>
     <p class="site-desc">Calculate iCPSS risk scores for Chronic Myelomonocytic Leukemia (CMML) using clinical and molecular data. Supports single-patient and batch scoring. Fully client-side — no data leaves your device.</p>
   </div>
 </header>
@@ -651,7 +650,7 @@
 
       <!-- Clinical Parameters -->
       <div class="form-section">
-        <div class="section-title">Clinical Parameters</div>
+        <div class="section-title">Step 1 — Clinical Parameters</div>
         <div class="form-grid-4">
           <div class="form-group">
             <label for="wbc">WBC <span class="unit">(×10⁹/L)</span></label>
@@ -674,7 +673,7 @@
 
       <!-- Cytogenetic Risk -->
       <div class="form-section">
-        <div class="section-title">Cytogenetic Risk</div>
+        <div class="section-title">Step 2 — Cytogenetic Risk</div>
         <div class="karyo-pills">
           <span class="karyo-pill">
             <input type="radio" name="karyo" id="karyo-0" value="0" checked>
@@ -703,7 +702,7 @@
 
       <!-- Somatic Mutations -->
       <div class="form-section">
-        <div class="section-title">Somatic Mutations</div>
+        <div class="section-title">Step 3 — Somatic Mutations</div>
         <p class="mutation-subtext">Select mutation status for each gene. Use <strong>?</strong> for genes not tested — the score will include a confidence estimate.</p>
         <div class="mutation-grid">
           <div class="gene-seg">
@@ -763,9 +762,16 @@
         </div>
       </div>
 
-      <!-- Demographics toggle (de-emphasized, default OFF) -->
-      <div class="form-section" style="margin-bottom:16px;">
-        <div class="demo-row-secondary">
+      <div class="form-section">
+        <div class="section-title">Step 4 — Compute</div>
+        <ul class="error-list" id="single-errors"></ul>
+        <div class="btn-row" style="margin-top:0;">
+          <button type="button" id="btn-compute" class="btn btn-primary">Compute Score</button>
+          <button type="button" id="btn-clear" class="btn btn-outline">Clear</button>
+        </div>
+
+        <!-- Demographics toggle (de-emphasized, default OFF) -->
+        <div class="demo-row-secondary" style="margin-top:18px;">
           <label class="toggle-switch">
             <input type="checkbox" id="demo-toggle">
             <span class="toggle-slider"></span>
@@ -782,7 +788,6 @@
 
         <!-- Demographics fields (hidden by default) -->
         <div id="demo-section" style="display:none; margin-top:14px;">
-          <div class="section-title" style="margin-bottom:12px;">Demographics</div>
           <div style="display:flex; gap:28px; align-items:flex-start; flex-wrap:wrap;">
             <div class="form-group">
               <label style="font-size:0.78rem; font-weight:600; color:var(--text-mid); margin-bottom:8px; display:block;">Sex</label>
@@ -805,12 +810,6 @@
             </div>
           </div>
         </div>
-      </div>
-
-      <ul class="error-list" id="single-errors"></ul>
-      <div class="btn-row">
-        <button type="button" id="btn-compute" class="btn btn-primary">Compute Score</button>
-        <button type="button" id="btn-clear" class="btn-ghost">Clear</button>
       </div>
     </form>
 
@@ -900,7 +899,7 @@
 
   <!-- Contact -->
   <div style="font-size: 0.78rem; color: var(--text-mute); margin-top: 32px; padding-top: 14px; border-top: 1px solid var(--border);">
-    <span style="font-weight: 600; color: var(--text-mid);">Contact</span>
+    <div class="section-title">Contact</div>
     <div class="contact-cols" style="display: flex; gap: 48px; margin-top: 8px; line-height: 1.6;">
       <div>
         <span style="font-weight: 600; color: var(--text-mid);">Luca Lanino</span><br>
@@ -916,18 +915,9 @@
     </div>
   </div>
 
-  <!-- Made with -->
-  <div style="font-size: 0.72rem; color: var(--text-mute); text-align: center; margin-top: 24px; padding-top: 14px; border-top: 1px solid var(--border);">
-    Made with &#10084; and <a href="https://claude.ai" style="color: inherit; text-decoration: underline; text-underline-offset: 2px;" target="_blank" rel="noopener noreferrer">Claude</a>
-  </div>
-
-  <!-- Acknowledgments -->
-  <div style="font-size: 0.72rem; color: var(--text-mute); text-align: center; margin-top: 10px;">
-    Batch processing uses <a href="https://sheetjs.com" style="color:inherit;" target="_blank" rel="noopener noreferrer">SheetJS Community Edition</a> (Apache 2.0).
-  </div>
-
   <!-- Disclaimer -->
   <div class="disclaimer-note">
+    <div class="section-title">Disclaimer &amp; Privacy</div>
     <strong>Investigational use only.</strong>
     This tool is intended for research purposes and to support — not replace — the clinical judgment of qualified healthcare professionals.
     It has not been reviewed or approved as a medical device by the FDA, EMA, or any other regulatory authority.
@@ -936,6 +926,14 @@
     <br><br>
     <strong>Privacy.</strong>
     All clinical and patient data entered into this tool is processed entirely within the user's web browser. No patient data is transmitted to, processed by, or stored on any external server.
+  </div>
+
+  <!-- Acknowledgments -->
+  <div style="font-size: 0.72rem; color: var(--text-mute); text-align: center; margin-top: 24px; padding-top: 14px; border-top: 1px solid var(--border);">
+    <a href="https://github.com/lucalanino/icpss-webapp" style="color: var(--text-mute); vertical-align: middle;" target="_blank" rel="noopener noreferrer" aria-label="View source on GitHub"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 16 16" fill="currentColor" style="vertical-align: text-bottom;"><path d="M6.766 11.695C4.703 11.437 3.25 9.904 3.25 7.92c0-.806.281-1.677.75-2.258-.203-.532-.172-1.662.062-2.129.626-.081 1.469.258 1.969.726.594-.194 1.219-.291 1.985-.291.765 0 1.39.097 1.953.274.484-.451 1.343-.79 1.969-.709.218.435.25 1.564.046 2.113.5.613.766 1.436.766 2.274 0 1.984-1.453 3.485-3.547 3.759.531.355.891 1.129.891 2.016v1.678c0 .484.39.758.859.564C13.781 14.824 16 11.905 16 8.291 16 3.726 12.406 0 7.984 0 3.562 0 0 3.726 0 8.291c0 3.581 2.203 6.55 5.172 7.663A.595.595 0 0 0 6 15.389v-1.291c-.219.097-.5.162-.75.162-1.031 0-1.641-.581-2.078-1.662-.172-.435-.36-.693-.719-.742-.187-.016-.25-.097-.25-.193 0-.194.313-.339.625-.339.453 0 .844.29 1.25.887.313.468.641.678 1.031.678.391 0 .641-.146 1-.516.266-.275.469-.517.657-.678Z"/></svg></a>
+    &nbsp;&middot;&nbsp;
+    Built with <a href="https://claude.ai" style="color: inherit; text-decoration: underline; text-underline-offset: 2px;" target="_blank" rel="noopener noreferrer">Claude</a>.
+    Batch processing uses <a href="https://sheetjs.com" style="color: inherit; text-decoration: underline; text-underline-offset: 2px;" target="_blank" rel="noopener noreferrer">SheetJS Community Edition</a> (Apache 2.0).
   </div>
 </main>
 

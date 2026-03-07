@@ -1,10 +1,10 @@
 # iCPSS Risk Score Calculator
 
-Client-side calculator for the **International CMML Prognostic Scoring System (iCPSS)** risk score in Chronic Myelomonocytic Leukemia (CMML). Runs entirely in the browser — no data is uploaded or transmitted.
+Client-side calculator for the **International CMML Prognostic Scoring System (iCPSS)** risk score in Chronic Myelomonocytic Leukemia (CMML). Runs entirely in the browser — no data leaves your device.
 
 ## Features
 
-- **Single Patient** — interactive form with instant scoring and outcome estimates
+- **Single Patient** — step-by-step form with instant scoring and outcome estimates
 - **Cohort Scoring** — download an Excel template, fill it locally, re-upload for batch computation
 - Confidence estimate when gene mutation status or karyotype is unknown
 - Optional demographic adjustment (age/sex) for patients aged 65–90
@@ -15,12 +15,13 @@ Open `index.html` in any modern browser. No server or build step required.
 
 ## Privacy
 
-No external network requests. No analytics. No data upload of any kind.
+All computation runs locally in the browser. No patient data is transmitted, stored, or uploaded.
 
 ## Reference
 
-*[Citation in press]*
+Lanino L, Hunter AM, et al. Molecular-Based Ecosystem to Improve Personalized Medicine in Chronic Myelomonocytic Leukemia. *In press*.
 
 ## Acknowledgments
 
-Batch processing uses [SheetJS Community Edition](https://sheetjs.com) (Apache 2.0).
+- Built with [Claude](https://claude.ai)
+- Batch processing uses [SheetJS Community Edition](https://sheetjs.com) (Apache 2.0)
