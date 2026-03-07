@@ -76,6 +76,7 @@
     .site-name strong { color: var(--accent); }
     .site-ref { font-size: 0.78rem; color: var(--text-mute); margin-top: 2px; }
     .site-desc { font-size: 0.84rem; color: var(--text-mute); margin-top: 6px; line-height: 1.45; }
+    .site-desc-mobile { display: none; }
 
     /* ── Main ────────────────────────────────────────────────────────────── */
     main {
@@ -213,7 +214,7 @@
 
     /* ── Mutation chips (3-state segmented controls) ─────────────────────── */
     .mutation-subtext {
-      font-size: 0.78rem;
+      font-size: 0.84rem;
       color: var(--text-mute);
       margin-bottom: 14px;
     }
@@ -500,7 +501,7 @@
       text-align: center; padding: 24px 0; font-size: 0.88rem;
     }
     .info-note-batch {
-      font-size: 0.78rem; color: var(--text-mute); line-height: 1.65; margin-top: 12px;
+      font-size: 0.84rem; color: var(--text-mute); line-height: 1.65; margin-top: 12px;
     }
     .info-note-batch code {
       font-family: "SF Mono", Consolas, monospace; font-size: 0.78rem;
@@ -644,6 +645,8 @@
       .form-grid-4 { grid-template-columns: 1fr 1fr; }
       .mutation-grid { grid-template-columns: 1fr; }
       .tab-btn[data-tab="batch"] { display: none; }
+      .site-desc-desktop { display: none; }
+      .site-desc-mobile { display: block; }
       .contact-cols { flex-direction: column; gap: 10px; }
     }
   </style>
@@ -654,7 +657,8 @@
   <div class="header-inner">
     <div class="site-name"><strong>iCPSS</strong> Risk Score Calculator</div>
 <span class="site-ref">Lanino L, Hunter AM, et al. Molecular-Based Ecosystem to Improve Personalized Medicine in Chronic Myelomonocytic Leukemia. <em>In press</em>.</span>
-    <p class="site-desc">Calculate iCPSS risk scores for Chronic Myelomonocytic Leukemia (CMML) using clinical and molecular data. Supports single-patient and batch scoring. Fully client-side — no data leaves your device.</p>
+    <p class="site-desc site-desc-desktop">Calculate iCPSS risk scores for Chronic Myelomonocytic Leukemia (CMML) using clinical and molecular data. Supports single-patient and batch scoring. Fully client-side — no data leaves your device.</p>
+    <p class="site-desc site-desc-mobile">Calculate iCPSS risk scores for Chronic Myelomonocytic Leukemia (CMML) using clinical and molecular data. Cohort scoring is available on desktop. Fully client-side — no data leaves your device.</p>
   </div>
 </header>
 
@@ -862,14 +866,14 @@
   <!-- ── Batch Panel ───────────────────────────────────────────────────────── -->
   <div id="panel-batch" class="tab-panel" role="tabpanel">
 
-    <p style="font-size:0.78rem; color:var(--text-mute); margin-bottom:24px;">
+    <p style="font-size:0.84rem; color:var(--text-mute); margin-bottom:24px;">
       Score an entire cohort at once. All computation runs locally — no data leaves your device.
     </p>
 
     <!-- Step 1 -->
     <div class="batch-step">
       <div class="section-title">Step 1 — Download Template</div>
-      <p style="font-size:0.78rem; color:var(--text-mute); margin-bottom:14px;">
+      <p style="font-size:0.84rem; color:var(--text-mute); margin-bottom:14px;">
         Download the Excel template, fill in patient data, then upload below.
       </p>
       <button type="button" id="btn-template" class="btn btn-outline">&#8659; Download Template (.xlsx)</button>
@@ -897,7 +901,7 @@
         <div class="upload-hint">.xlsx files only</div>
         <input type="file" id="batch-file" accept=".xlsx">
       </label>
-      <p id="batch-filename" style="font-size:0.84rem; color:var(--text-mute); margin-top:8px;"></p>
+      <p id="batch-filename" style="font-size:0.84rem; color:var(--text-mute); margin-top:8px"></p>
     </div>
 
     <!-- Demographics (batch, de-emphasized, default OFF) -->
@@ -912,8 +916,8 @@
             Include age &amp; sex adjustment
           </label>
           <span class="demo-sub-note">
-            Requires <code style="font-size:0.72rem; background:rgba(0,0,0,0.06); padding:1px 4px; border-radius:2px;">sex</code>
-            and <code style="font-size:0.72rem; background:rgba(0,0,0,0.06); padding:1px 4px; border-radius:2px;">age</code>
+            Requires <code style="font-size:0.78rem; background:rgba(0,0,0,0.06); padding:1px 4px; border-radius:2px;">sex</code>
+            and <code style="font-size:0.78rem; background:rgba(0,0,0,0.06); padding:1px 4px; border-radius:2px;">age</code>
             columns. Only validated for ages 65–90.
           </span>
         </div>
