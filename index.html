@@ -22,9 +22,9 @@
   <link rel="icon" type="image/svg+xml" href="favicon.svg">
   <link rel="icon" type="image/png" sizes="96x96" href="favicon.png">
   <link rel="canonical" href="https://icpss-risk.com/">
-  <meta name="description" content="iCPSS (International CMML Prognostic Scoring System) risk calculator for Chronic Myelomonocytic Leukemia. Single patient and cohort scoring, fully client-side — no data leaves your device.">
+  <meta name="description" content="The International CMML Prognostic Scoring System (iCPSS) is a molecular-based tool for risk stratification and prognosis in Chronic Myelomonocytic Leukemia. Score individual patients or entire cohorts — fully client-side, no data leaves your browser.">
   <meta property="og:title" content="iCPSS — CMML Risk Score Calculator">
-  <meta property="og:description" content="iCPSS (International CMML Prognostic Scoring System) risk calculator for Chronic Myelomonocytic Leukemia. Single patient and cohort scoring, fully client-side — no data leaves your device.">
+  <meta property="og:description" content="The International CMML Prognostic Scoring System (iCPSS) is a molecular-based tool for risk stratification and prognosis in Chronic Myelomonocytic Leukemia. Score individual patients or entire cohorts — fully client-side, no data leaves your browser.">
   <meta property="og:type" content="website">
   <meta property="og:url" content="https://icpss-risk.com/">
   <meta name="twitter:card" content="summary">
@@ -56,12 +56,12 @@
 
     /* ── Header ──────────────────────────────────────────────────────────── */
     header {
-      border-bottom: 1px solid var(--border);
-      padding: 18px 32px 16px;
+      padding: 18px 0 16px;
     }
     .header-inner {
       max-width: 1200px;
       margin: 0 auto;
+      padding: 0 24px;
       display: flex;
       flex-direction: column;
       gap: 4px;
@@ -75,8 +75,8 @@
       margin-bottom: 16px;
     }
     .site-name strong { color: var(--accent); }
-    .site-ref { font-size: 0.78rem; color: var(--text-mute); margin-top: 2px; }
     .site-desc { font-size: 0.84rem; color: var(--text-mute); margin-top: 6px; line-height: 1.45; }
+    .site-pub { font-size: 0.78rem; color: var(--text-mute); margin-top: 16px; border-top: 1px solid var(--border); padding-top: 10px; padding-bottom: 16px; border-bottom: 1px solid var(--border); }
 
 
     /* ── Main ────────────────────────────────────────────────────────────── */
@@ -580,6 +580,13 @@
     }
     .ps-disc strong { font-weight: 600; }
 
+    /* ── ORCID badge ─────────────────────────────────────────────────────── */
+    .orcid-link {
+      display: inline-flex; align-items: center;
+      color: inherit; text-decoration: none;
+      margin-left: 5px;
+    }
+
     /* ── Print media ─────────────────────────────────────────────────────── */
     @media print {
       @page { margin: 14mm 12mm; }
@@ -641,8 +648,8 @@
       .mutation-grid { grid-template-columns: 1fr 1fr; }
     }
     @media (max-width: 640px) {
-      header { padding: 14px 16px; }
-      .header-inner { flex-wrap: wrap; gap: 4px; }
+      header { padding: 14px 0; }
+      .header-inner { padding: 0 16px; flex-wrap: wrap; gap: 4px; }
       main { padding: 20px 16px 60px; }
       .form-grid-4 { grid-template-columns: 1fr 1fr; }
       .mutation-grid { grid-template-columns: 1fr; }
@@ -651,13 +658,19 @@
   </style>
 </head>
 <body>
+<svg style="display:none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <g id="orcid-icon"><path d="M256,128c0,70.7-57.3,128-128,128C57.3,256,0,198.7,0,128C0,57.3,57.3,0,128,0C198.7,0,256,57.3,256,128z" fill="#A6CE39"/><g fill="#fff"><path d="M86.3,186.2H70.9V79.1h15.4v48.4V186.2z"/><path d="M108.9,79.1h41.6c39.6,0,57,28.3,57,53.6c0,27.5-21.5,53.6-56.8,53.6h-41.8V79.1z M124.3,172.4h24.5c34.9,0,42.9-26.5,42.9-39.7c0-21.5-13.7-39.7-43.7-39.7h-23.7V172.4z"/><path d="M88.7,56.8c0,5.5-4.5,10.1-10.1,10.1c-5.6,0-10.1-4.6-10.1-10.1c0-5.6,4.5-10.1,10.1-10.1C84.2,46.7,88.7,51.3,88.7,56.8z"/></g></g>
+  </defs>
+</svg>
 
 <header>
   <div class="header-inner">
     <h1 class="site-name"><strong>iCPSS</strong> Risk Score Calculator</h1>
-    <span class="site-ref">Lanino L, Hunter AM, et al. Molecular-Based Ecosystem to Improve Personalized Medicine in Chronic Myelomonocytic Leukemia. <em>In press</em>.</span>
-    <p class="site-desc">iCPSS (International CMML Prognostic Scoring System) risk calculator for Chronic Myelomonocytic Leukemia. Single patient and cohort scoring.</p>
-    <!-- TODO: add paper abstract here once published (with citation and DOI link) -->
+    <p class="site-desc">The International CMML Prognostic Scoring System (iCPSS) is a molecular-based tool for risk stratification and prognosis in Chronic Myelomonocytic Leukemia. Score individual patients or entire cohorts — fully client-side, no data leaves your browser.</p>
+    <div class="site-pub">
+      Lanino L, Hunter AM, et al. Molecular-Based Ecosystem to Improve Personalized Medicine in Chronic Myelomonocytic Leukemia. <em>In press</em>.
+    </div>
   </div>
 </header>
 
@@ -950,13 +963,13 @@
     <div class="contact-cols" style="display: flex; gap: 48px; margin-top: 8px; line-height: 1.6;">
       <div>
         <span style="font-weight: 600; color: var(--text-mid);">Luca Lanino</span>
-        <a href="https://orcid.org/0000-0003-2404-8829" target="_blank" rel="noopener noreferrer" style="display: inline-flex; align-items: center; color: inherit; text-decoration: none; margin-left: 5px; vertical-align: middle;" aria-label="ORCID profile"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 256 256" style="flex-shrink:0;"><path d="M256,128c0,70.7-57.3,128-128,128C57.3,256,0,198.7,0,128C0,57.3,57.3,0,128,0C198.7,0,256,57.3,256,128z" fill="#A6CE39"/><g fill="#fff"><path d="M86.3,186.2H70.9V79.1h15.4v48.4V186.2z"/><path d="M108.9,79.1h41.6c39.6,0,57,28.3,57,53.6c0,27.5-21.5,53.6-56.8,53.6h-41.8V79.1z M124.3,172.4h24.5c34.9,0,42.9-26.5,42.9-39.7c0-21.5-13.7-39.7-43.7-39.7h-23.7V172.4z"/><path d="M88.7,56.8c0,5.5-4.5,10.1-10.1,10.1c-5.6,0-10.1-4.6-10.1-10.1c0-5.6,4.5-10.1,10.1-10.1C84.2,46.7,88.7,51.3,88.7,56.8z"/></g></svg></a><br>
+        <a href="https://orcid.org/0000-0003-2404-8829" target="_blank" rel="noopener noreferrer" class="orcid-link" aria-label="ORCID profile"><svg width="16" height="16" viewBox="0 0 256 256"><use href="#orcid-icon"/></svg></a><br>
         Yale University<br>
         <a href="mailto:luca.lanino@yale.edu" style="color: inherit; text-decoration: underline; text-underline-offset: 2px;">luca.lanino@yale.edu</a>
       </div>
       <div>
         <span style="font-weight: 600; color: var(--text-mid);">Matteo G Della Porta</span>
-        <a href="https://orcid.org/0000-0002-6915-5970" target="_blank" rel="noopener noreferrer" style="display: inline-flex; align-items: center; color: inherit; text-decoration: none; margin-left: 5px; vertical-align: middle;" aria-label="ORCID profile"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 256 256" style="flex-shrink:0;"><path d="M256,128c0,70.7-57.3,128-128,128C57.3,256,0,198.7,0,128C0,57.3,57.3,0,128,0C198.7,0,256,57.3,256,128z" fill="#A6CE39"/><g fill="#fff"><path d="M86.3,186.2H70.9V79.1h15.4v48.4V186.2z"/><path d="M108.9,79.1h41.6c39.6,0,57,28.3,57,53.6c0,27.5-21.5,53.6-56.8,53.6h-41.8V79.1z M124.3,172.4h24.5c34.9,0,42.9-26.5,42.9-39.7c0-21.5-13.7-39.7-43.7-39.7h-23.7V172.4z"/><path d="M88.7,56.8c0,5.5-4.5,10.1-10.1,10.1c-5.6,0-10.1-4.6-10.1-10.1c0-5.6,4.5-10.1,10.1-10.1C84.2,46.7,88.7,51.3,88.7,56.8z"/></g></svg></a><br>
+        <a href="https://orcid.org/0000-0002-6915-5970" target="_blank" rel="noopener noreferrer" class="orcid-link" aria-label="ORCID profile"><svg width="16" height="16" viewBox="0 0 256 256"><use href="#orcid-icon"/></svg></a><br>
         IRCCS Humanitas Research Hospital, Humanitas University<br>
         <a href="mailto:matteo.della_porta@hunimed.eu" style="color: inherit; text-decoration: underline; text-underline-offset: 2px;">matteo.della_porta@hunimed.eu</a>
       </div>
