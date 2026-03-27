@@ -26,7 +26,7 @@ All computation runs locally in the browser. No patient data is transmitted, sto
 
 ## Reference
 
-Lanino L, Hunter AM, et al. Molecular-Based Ecosystem to Improve Personalized Medicine in Chronic Myelomonocytic Leukemia. *In press*.
+Lanino L, Hunter AM, et al. Molecular-Based Ecosystem to Improve Personalized Medicine in Chronic Myelomonocytic Leukemia. *J Clin Oncol* 2026 doi:10.1200/JCO-25-02116 — <https://ascopubs.org/doi/10.1200/JCO-25-02116>
 
 ## Acknowledgments
 
