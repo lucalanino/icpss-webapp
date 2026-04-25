@@ -11,7 +11,7 @@ Client-side calculator for the **International CMML Prognostic Scoring System (i
 
 ## Usage
 
-**Online:** [icpss-risk.com](https://www.icpss-risk.com/)
+**Online:** [icpss-risk.com](https://icpss-risk.com/)
 
 **Run locally:** download or clone this repository and open `index.html` in any browser. No server or build step required.
 
