@@ -104,8 +104,9 @@
     }
     .tab-btn:hover { color: var(--accent); }
     .tab-btn.active { color: var(--accent); border-bottom-color: var(--accent); font-weight: 600; }
-    .tab-panel  { display: none; }
-    .tab-panel.active { display: block; }
+    .tab-panels { display: grid; }
+    .tab-panel  { grid-column: 1; grid-row: 1; visibility: hidden; pointer-events: none; overflow: hidden; height: 0; }
+    .tab-panel.active { visibility: visible; pointer-events: auto; overflow: visible; height: auto; }
 
     /* ── Form sections ───────────────────────────────────────────────────── */
     .form-section { margin-bottom: 26px; }
@@ -681,6 +682,7 @@
     <button class="tab-btn" data-tab="batch" role="tab" aria-selected="false">Cohort Scoring</button>
   </div>
 
+  <div class="tab-panels">
   <!-- ── Single Patient Panel ─────────────────────────────────────────────── -->
   <div id="panel-single" class="tab-panel active" role="tabpanel">
 
@@ -953,6 +955,7 @@
     </div>
 
   </div><!-- /panel-batch -->
+  </div><!-- /tab-panels -->
 
   <!-- Print sheet (hidden; shown only in @media print) -->
   <div id="print-sheet"></div>
