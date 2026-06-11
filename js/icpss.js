@@ -98,7 +98,7 @@ const CLASS_NAMES = {
 };
 
 // Outcome data by risk class index (0=VL … 4=VH)
-// Source: Lanino L, Hunter AM, et al. J Clin Oncol 2026 doi:10.1200/JCO-25-02116
+// Source: Lanino L, Hunter AM, et al. J Clin Oncol 2026 Jun 10;44(17):1608-1623. doi:10.1200/JCO-25-02116
 const OUTCOMES = [
   { surv5y: '71%', surv5y_ci: '65–77%',  aml3y: '6.5%', aml3y_ci: '4.3–9.3%' },
   { surv5y: '50%', surv5y_ci: '46–55%',  aml3y: '12%',  aml3y_ci: '9.9–14%'  },
@@ -645,7 +645,7 @@ function populatePrintSheet(result, raw, includeDemographics, confidence) {
       </tr>
     </table>
     <hr class="ps-rule">
-    <div class="ps-ref">Lanino L, Hunter AM, et al. Molecular-Based Ecosystem to Improve Personalized Medicine in Chronic Myelomonocytic Leukemia. <em>J Clin Oncol</em> 2026 <a href="https://ascopubs.org/doi/10.1200/JCO-25-02116" target="_blank" rel="noopener noreferrer" style="color:#1a5eb8;text-decoration:none;">doi:10.1200/JCO-25-02116</a></div>
+    <div class="ps-ref">Lanino L, Hunter AM, et al. Molecular-Based Ecosystem to Improve Personalized Medicine in Chronic Myelomonocytic Leukemia. <em>J Clin Oncol</em> 2026 Jun 10;44(17):1608-1623. <a href="https://ascopubs.org/doi/10.1200/JCO-25-02116" target="_blank" rel="noopener noreferrer" style="color:#1a5eb8;text-decoration:none;">doi:10.1200/JCO-25-02116</a></div>
     <div class="ps-disc"><strong>Investigational use only.</strong> This tool is intended for research purposes and to support &mdash; not replace &mdash; the clinical judgment of qualified healthcare professionals. It has not been reviewed or approved as a medical device by the FDA, EMA, or any other regulatory authority. Risk estimates are derived from a retrospective cohort and carry inherent uncertainty; they should be interpreted in the full clinical context of each individual patient. The authors assume no liability for clinical decisions made on the basis of this tool.</div>`;
 }
 
